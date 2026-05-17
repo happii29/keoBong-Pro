@@ -3,7 +3,13 @@ import type { TeamId } from "@/types/team";
 
 export type N8nWorkflowName =
   | "match.created"
+  | "match.auto_create"
+  | "match.lock_before_kickoff"
   | "attendance.requested"
+  | "attendance.link_send"
+  | "attendance.pending_remind"
+  | "fund.calculate"
+  | "ranking.update"
   | "payment.reminder"
   | "weekly.summary";
 

@@ -1,6 +1,8 @@
 import {
   CalendarDays,
+  Crown,
   LayoutDashboard,
+  Scale,
   Settings2,
   UsersRound,
   WalletCards,
@@ -24,6 +26,20 @@ export const workspaceNavigation: WorkspaceNavItem[] = [
     shortLabel: "Lịch",
     href: routes.matches,
     icon: CalendarDays,
+  },
+  {
+    key: "balance",
+    label: "Chia đội",
+    shortLabel: "Chia",
+    href: routes.balance,
+    icon: Scale,
+  },
+  {
+    key: "ranking",
+    label: "Ranking",
+    shortLabel: "Rank",
+    href: routes.ranking,
+    icon: Crown,
   },
   {
     key: "players",

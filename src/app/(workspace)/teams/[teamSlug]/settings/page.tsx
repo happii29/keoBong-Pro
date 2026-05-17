@@ -1,14 +1,13 @@
-import { Settings2 } from "lucide-react";
+import { AutomationSettingsModule } from "@/modules/settings/components/automation-settings-module";
 
-import { ModulePlaceholder } from "@/modules/shared/components/module-placeholder";
+type SettingsPageProps = {
+  params: Promise<{
+    teamSlug: string;
+  }>;
+};
 
-export default function SettingsPage() {
-  return (
-    <ModulePlaceholder
-      icon={Settings2}
-      title="Thiết lập"
-      metricLabel="Cấu hình"
-      metricValue="0"
-    />
-  );
+export default async function SettingsPage({ params }: SettingsPageProps) {
+  const { teamSlug } = await params;
+
+  return <AutomationSettingsModule teamSlug={teamSlug} />;
 }

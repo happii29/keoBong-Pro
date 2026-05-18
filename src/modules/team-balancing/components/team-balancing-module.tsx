@@ -10,11 +10,13 @@ import {
   Trophy,
   UsersRound,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -152,15 +154,9 @@ function buildZaloMessage(teams: BalancedTeam[]) {
 export function TeamBalancingModule({ teamSlug }: TeamBalancingModuleProps) {
   const teamName = formatTeamSlug(teamSlug);
   const [seed, setSeed] = useState(1);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1600);
   const teams = useMemo(() => balanceTeams(seed), [seed]);
   const message = useMemo(() => buildZaloMessage(teams), [teams]);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(message);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  };
 
   return (
     <section className="space-y-6">
@@ -174,7 +170,7 @@ export function TeamBalancingModule({ teamSlug }: TeamBalancingModuleProps) {
               <RefreshCw className="size-4" />
               Chia lại
             </Button>
-            <Button variant="gold" onClick={handleCopy}>
+            <Button variant="gold" onClick={() => void copy(message)}>
               <Clipboard className="size-4" />
               {copied ? "Đã copy" : "Copy lineup gửi Zalo"}
             </Button>
@@ -213,7 +209,7 @@ function Metric({
   label,
   value,
 }: {
-  icon: typeof UsersRound;
+  icon: LucideIcon;
   label: string;
   value: string;
 }) {

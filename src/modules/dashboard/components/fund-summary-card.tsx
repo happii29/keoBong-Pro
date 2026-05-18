@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, WalletCards } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +66,7 @@ function FundMetric({
   value,
   tone,
 }: {
-  icon: typeof ArrowUpRight;
+  icon: LucideIcon;
   label: string;
   value: string;
   tone: "emerald" | "gold";

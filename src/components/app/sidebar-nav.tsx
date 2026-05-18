@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { appConfig } from "@/config/app";
 import { workspaceNavigation } from "@/config/navigation";
 import { formatTeamSlug } from "@/lib/format";
+import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 type SidebarNavProps = {
@@ -34,14 +35,13 @@ export function SidebarNav({ teamSlug }: SidebarNavProps) {
         {workspaceNavigation.map((item) => {
           const href = item.href(teamSlug);
           const Icon = item.icon;
-          const active = item.exact
-            ? pathname === href
-            : pathname === href || pathname.startsWith(`${href}/`);
+          const active = isActivePath({ pathname, href, exact: item.exact });
 
           return (
             <Link
               key={item.key}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-all duration-200",
                 "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

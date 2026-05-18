@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Check, Copy, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
 import type { AttendanceCounts, AttendancePlayer } from "../attendance.types";
 
@@ -12,7 +13,7 @@ type ZaloMessagePreviewProps = {
 };
 
 export function ZaloMessagePreview({ players, counts }: ZaloMessagePreviewProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1800);
 
   const message = useMemo(() => {
     const goingNames = players
@@ -45,16 +46,6 @@ export function ZaloMessagePreview({ players, counts }: ZaloMessagePreviewProps)
       .join("\n");
   }, [players, counts]);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(message);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -72,7 +63,7 @@ export function ZaloMessagePreview({ players, counts }: ZaloMessagePreviewProps)
           variant={copied ? "emerald" : "gold"}
           size="lg"
           className="mt-4 w-full"
-          onClick={handleCopy}
+          onClick={() => void copy(message)}
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copied ? "Đã copy" : "Copy Zalo message"}

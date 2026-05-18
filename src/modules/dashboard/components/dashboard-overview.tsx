@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CalendarDays,
   CheckCircle2,
@@ -75,10 +76,10 @@ export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
         description="Bức tranh vận hành trong ngày: lịch đá, điểm danh, quỹ đội, phong độ cầu thủ và các thao tác nhanh cho captain."
         action={
           <Button asChild variant="gold" size="lg">
-            <a href={routes.matches(teamSlug)}>
+            <Link href={routes.matches(teamSlug)}>
               <Plus className="size-4" />
               Tạo trận
-            </a>
+            </Link>
           </Button>
         }
       />

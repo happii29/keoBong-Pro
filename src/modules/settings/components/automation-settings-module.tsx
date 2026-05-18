@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -120,7 +121,7 @@ export function AutomationSettingsModule({ teamSlug }: AutomationSettingsModuleP
   const [secret, setSecret] = useState("kbp_live_••••••••");
   const [automationEnabled, setAutomationEnabled] = useState(true);
   const [workflows, setWorkflows] = useState(initialWorkflows);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1600);
 
   const enabledCount = workflows.filter((workflow) => workflow.enabled).length;
   const scheduledCount = workflows.filter((workflow) => workflow.enabled && workflow.status === "scheduled").length;
@@ -170,12 +171,6 @@ export function AutomationSettingsModule({ teamSlug }: AutomationSettingsModuleP
     );
   };
 
-  const handleCopyPreview = async () => {
-    await navigator.clipboard.writeText(zaloPreview);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  };
-
   return (
     <section className="space-y-6">
       <PageHeader
@@ -206,7 +201,11 @@ export function AutomationSettingsModule({ teamSlug }: AutomationSettingsModuleP
 
         <div className="space-y-5">
           <AutomationStatusPanel workflows={workflows} automationEnabled={automationEnabled} />
-          <ZaloPreview preview={zaloPreview} copied={copied} onCopy={handleCopyPreview} />
+          <ZaloPreview
+            preview={zaloPreview}
+            copied={copied}
+            onCopy={() => void copy(zaloPreview)}
+          />
           <FutureWebhookPayload payload={webhookPayload} />
         </div>
       </div>

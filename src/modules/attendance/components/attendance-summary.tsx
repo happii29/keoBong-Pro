@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock3, Goal, HelpCircle, UserX } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -74,7 +75,7 @@ function SummaryMetric({
   tone,
   className,
 }: {
-  icon: typeof CheckCircle2;
+  icon: LucideIcon;
   label: string;
   value: number;
   tone: "emerald" | "gold" | "danger" | "slate";

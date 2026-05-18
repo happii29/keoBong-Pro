@@ -1,4 +1,5 @@
 import { Clock3, Goal, HelpCircle, UserX, CheckCircle2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ const statusIcons = {
   late: Clock3,
   goalkeeper: Goal,
   pending: HelpCircle,
-} satisfies Record<AttendanceStatus, typeof CheckCircle2>;
+} satisfies Record<AttendanceStatus, LucideIcon>;
 
 export function AttendanceList({ players, onStatusChange }: AttendanceListProps) {
   return (

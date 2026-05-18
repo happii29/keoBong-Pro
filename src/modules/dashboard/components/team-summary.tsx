@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock3, UserX } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -59,7 +60,7 @@ function SummaryRow({
   label,
   value,
 }: {
-  icon: typeof CheckCircle2;
+  icon: LucideIcon;
   label: string;
   value: number;
 }) {

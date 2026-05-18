@@ -1,6 +1,7 @@
 "use client";
 
-import { Crown, Percent, Star, Target, Trophy, UsersRound } from "lucide-react";
+import { Crown, Percent, Star, Target, UsersRound } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,7 +47,7 @@ function RankingMetric({
   value,
   detail,
 }: {
-  icon: typeof Trophy;
+  icon: LucideIcon;
   label: string;
   value: string;
   detail: string;

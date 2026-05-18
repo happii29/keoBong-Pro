@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin, Shield, UsersRound } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ function MatchMeta({
   label,
   value,
 }: {
-  icon: typeof CalendarDays;
+  icon: LucideIcon;
   label: string;
   value: string;
 }) {

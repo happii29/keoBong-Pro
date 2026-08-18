@@ -1,14 +1,15 @@
 "use client";
 
+import { useActionState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  CalendarDays,
   CircleDollarSign,
-  Droplets,
+  Edit3,
   FileText,
-  Landmark,
+  Plus,
   ReceiptText,
+  Trash2,
   UsersRound,
   WalletCards,
 } from "lucide-react";
@@ -16,7 +17,17 @@ import type { LucideIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -28,50 +39,35 @@ import {
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import type { FundMember, FundTransaction, MonthlyCashflow } from "../finance.types";
+import {
+  createFundTransactionAction,
+  deleteFundTransactionAction,
+  updateFundTransactionAction,
+} from "../actions";
+import type {
+  FinanceMatch,
+  FinancePlayer,
+  FinanceRole,
+  FinanceTransaction,
+  FundFormState,
+  MatchPaymentSummary,
+} from "../finance.types";
 
 type FundManagementModuleProps = {
   teamSlug: string;
+  role: FinanceRole;
+  currentUserId: string;
+  players: FinancePlayer[];
+  matches: FinanceMatch[];
+  transactions: FinanceTransaction[];
+  matchPaymentSummaries: MatchPaymentSummary[];
 };
 
-const perPlayerAmount = 120000;
-const pitchFee = 720000;
-const waterFee = 180000;
+const managerRoles: FinanceRole[] = ["owner", "manager", "captain"];
+const initialState: FundFormState = {};
 
-const members: FundMember[] = [
-  { id: "m1", name: "Minh Nguyễn", shirtNumber: 9, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "16/05" },
-  { id: "m2", name: "Quân Trần", shirtNumber: 8, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "16/05" },
-  { id: "m3", name: "Hưng Phạm", shirtNumber: 1, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "15/05" },
-  { id: "m4", name: "Long Lê", shirtNumber: 5, amountDue: perPlayerAmount, paidAmount: 60000 },
-  { id: "m5", name: "Tuấn Anh", shirtNumber: 11, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "15/05" },
-  { id: "m6", name: "Khải Võ", shirtNumber: 2, amountDue: perPlayerAmount, paidAmount: 0 },
-  { id: "m7", name: "Duy Hoàng", shirtNumber: 6, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "16/05" },
-  { id: "m8", name: "Nam Phạm", shirtNumber: 7, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "14/05" },
-  { id: "m9", name: "Bảo Trần", shirtNumber: 4, amountDue: perPlayerAmount, paidAmount: 0 },
-  { id: "m10", name: "Khoa Đặng", shirtNumber: 10, amountDue: perPlayerAmount, paidAmount: 120000, paidAt: "16/05" },
-];
-
-const transactions: FundTransaction[] = [
-  { id: "t1", date: "17/05", title: "Thu quỹ trận Chủ nhật", category: "Quỹ", type: "income", amount: 900000, note: "8 người đã đóng, 1 người đóng một phần" },
-  { id: "t2", date: "17/05", title: "Tiền sân Phú Thọ - Sân 3", category: "Sân", type: "expense", amount: 720000, note: "Khung 20:30 - 22:00" },
-  { id: "t3", date: "17/05", title: "Nước suối + điện giải", category: "Nước", type: "expense", amount: 180000, note: "2 thùng nước, 12 chai điện giải" },
-  { id: "t4", date: "10/05", title: "Thu bù quỹ tuần trước", category: "Quỹ", type: "income", amount: 360000, note: "3 thành viên chuyển khoản" },
-  { id: "t5", date: "09/05", title: "Băng keo thể thao", category: "Khác", type: "expense", amount: 85000, note: "Y tế trận đấu" },
-];
-
-const monthlyCashflow: MonthlyCashflow[] = [
-  { month: "T1", income: 2200000, expense: 1780000 },
-  { month: "T2", income: 2460000, expense: 1920000 },
-  { month: "T3", income: 2380000, expense: 2140000 },
-  { month: "T4", income: 2640000, expense: 2060000 },
-  { month: "T5", income: 1260000, expense: 985000 },
-];
-
-const expenseBreakdown = [
-  { label: "Tiền sân", value: pitchFee, color: "#34d399", dot: "bg-emerald" },
-  { label: "Tiền nước", value: waterFee, color: "#f5bd49", dot: "bg-gold" },
-  { label: "Khác", value: 85000, color: "#7dd3fc", dot: "bg-sky-300" },
-];
+const fieldClass =
+  "h-11 w-full rounded-lg border border-white/12 bg-white/[0.055] px-3.5 py-2 text-sm text-foreground shadow-luxury outline-none focus:border-emerald/45 focus:ring-3 focus:ring-emerald/14";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("vi-VN", {
@@ -81,73 +77,90 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function compactCurrency(value: number) {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}tr`;
-  }
-
-  return `${Math.round(value / 1000)}k`;
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
-export function FundManagementModule({ teamSlug }: FundManagementModuleProps) {
+export function FundManagementModule({
+  teamSlug,
+  role,
+  currentUserId,
+  players,
+  matches,
+  transactions,
+  matchPaymentSummaries,
+}: FundManagementModuleProps) {
   const teamName = formatTeamSlug(teamSlug);
-  const paidMembers = members.filter((member) => member.paidAmount >= member.amountDue);
-  const unpaidMembers = members.filter((member) => member.paidAmount < member.amountDue);
-  const expectedIncome = members.reduce((sum, member) => sum + member.amountDue, 0);
-  const collected = members.reduce((sum, member) => sum + member.paidAmount, 0);
-  const outstanding = expectedIncome - collected;
-  const income = transactions
+  const canManage = managerRoles.includes(role);
+  const totalIncome = transactions
     .filter((transaction) => transaction.type === "income")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const expense = transactions
+    .reduce((sum, transaction) => sum + transaction.amount_vnd, 0);
+  const totalExpense = transactions
     .filter((transaction) => transaction.type === "expense")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const totalFund = 3485000 + income - expense;
-  const collectionRate = Math.round((collected / expectedIncome) * 100);
+    .reduce((sum, transaction) => sum + transaction.amount_vnd, 0);
+  const totalFund = totalIncome - totalExpense;
+  const myPlayerIds = new Set(players.filter((player) => player.user_id === currentUserId).map((player) => player.id));
+  const myDebt = matchPaymentSummaries
+    .flatMap((summary) => summary.players)
+    .filter((player) => player.isCurrentUser || myPlayerIds.has(player.playerId))
+    .reduce((sum, player) => sum + player.debtAmount, 0);
+  const paidPlayers = matchPaymentSummaries
+    .flatMap((summary) => summary.players)
+    .filter((player) => player.dueAmount > 0 && player.paidAmount >= player.dueAmount).length;
+  const debtPlayers = matchPaymentSummaries
+    .flatMap((summary) => summary.players)
+    .filter((player) => player.debtAmount > 0).length;
 
   return (
     <section className="space-y-6">
       <PageHeader
         eyebrow="Fund management"
         title="Quản lý quỹ đội"
-        description={`${teamName} · Theo dõi tiền sân, tiền nước, công nợ và lịch sử thu chi`}
+        description={`${teamName} · Theo dõi tổng quỹ, thu chi và công nợ theo từng trận`}
+        action={canManage ? (
+          <TransactionDialog teamSlug={teamSlug} players={players} matches={matches} mode="create" />
+        ) : null}
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <FinanceMetric
-          icon={WalletCards}
-          label="Tổng quỹ"
-          value={formatCurrency(totalFund)}
-          detail={`Còn phải thu ${formatCurrency(outstanding)}`}
-          tone="emerald"
-        />
-        <FinanceMetric icon={Landmark} label="Tiền sân" value={formatCurrency(pitchFee)} detail="Sân Phú Thọ · 20:30" tone="slate" />
-        <FinanceMetric icon={Droplets} label="Tiền nước" value={formatCurrency(waterFee)} detail="Nước suối và điện giải" tone="gold" />
+        <FinanceMetric icon={WalletCards} label="Tổng quỹ" value={formatCurrency(totalFund)} detail="Thu trừ chi toàn đội" tone="emerald" />
+        <FinanceMetric icon={ArrowUpRight} label="Tổng thu" value={formatCurrency(totalIncome)} detail="Bao gồm tiền cầu thủ đóng" tone="sky" />
+        <FinanceMetric icon={ArrowDownRight} label="Tổng chi" value={formatCurrency(totalExpense)} detail="Sân, nước và chi phí khác" tone="gold" />
         <FinanceMetric
           icon={CircleDollarSign}
-          label="Tiền mỗi người"
-          value={formatCurrency(perPlayerAmount)}
-          detail={`${members.length} thành viên trong kèo`}
-          tone="sky"
+          label={canManage ? "Còn nợ" : "Nợ của tôi"}
+          value={formatCurrency(canManage ? matchPaymentSummaries.reduce((sum, summary) => sum + summary.debtTotal, 0) : myDebt)}
+          detail={canManage ? `${debtPlayers} lượt chưa đủ tiền` : "Tính theo cầu thủ gắn với tài khoản"}
+          tone="slate"
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <div className="space-y-5">
-          <FundHero
-            totalFund={totalFund}
-            collected={collected}
-            expectedIncome={expectedIncome}
-            collectionRate={collectionRate}
-            paidCount={paidMembers.length}
-            unpaidCount={unpaidMembers.length}
-          />
-          <CashflowChart data={monthlyCashflow} />
-          <TransactionHistory transactions={transactions} />
+          <MatchPaymentPanel summaries={matchPaymentSummaries} canManage={canManage} />
+          {canManage ? (
+            <TransactionHistory
+              teamSlug={teamSlug}
+              players={players}
+              matches={matches}
+              transactions={transactions}
+            />
+          ) : null}
         </div>
         <div className="space-y-5">
-          <ExpenseBreakdown />
-          <MemberPayments paidMembers={paidMembers} unpaidMembers={unpaidMembers} />
+          <FundSnapshot
+            totalFund={totalFund}
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            paidPlayers={paidPlayers}
+            debtPlayers={debtPlayers}
+            canManage={canManage}
+          />
+          {!canManage ? <MemberHint hasLinkedPlayer={myPlayerIds.size > 0} /> : null}
         </div>
       </div>
     </section>
@@ -192,257 +205,138 @@ function FinanceMetric({
   );
 }
 
-function FundHero({
+function FundSnapshot({
   totalFund,
-  collected,
-  expectedIncome,
-  collectionRate,
-  paidCount,
-  unpaidCount,
+  totalIncome,
+  totalExpense,
+  paidPlayers,
+  debtPlayers,
+  canManage,
 }: {
   totalFund: number;
-  collected: number;
-  expectedIncome: number;
-  collectionRate: number;
-  paidCount: number;
-  unpaidCount: number;
+  totalIncome: number;
+  totalExpense: number;
+  paidPlayers: number;
+  debtPlayers: number;
+  canManage: boolean;
+}) {
+  const rows = [
+    { label: "Tổng quỹ", value: formatCurrency(totalFund) },
+    { label: "Tổng thu", value: formatCurrency(totalIncome) },
+    { label: "Tổng chi", value: formatCurrency(totalExpense) },
+    { label: canManage ? "Lượt đã đóng đủ" : "Trạng thái", value: canManage ? paidPlayers.toString() : debtPlayers ? "Còn nợ" : "Ổn" },
+  ];
+
+  return (
+    <Card className="py-0">
+      <CardHeader className="border-b border-white/10 px-5 py-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ReceiptText className="size-5 text-gold" />
+          Tổng quan quỹ
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="divide-y divide-white/8 p-0">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-4 px-5 py-4 text-sm">
+            <span className="text-muted-foreground">{row.label}</span>
+            <span className="font-semibold">{row.value}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MemberHint({ hasLinkedPlayer }: { hasLinkedPlayer: boolean }) {
+  return (
+    <Card className="py-0">
+      <CardContent className="p-5 text-sm leading-6 text-muted-foreground">
+        {hasLinkedPlayer
+          ? "Bạn đang xem phần đóng quỹ của cầu thủ được gắn với tài khoản của mình."
+          : "Tài khoản của bạn chưa được gắn với hồ sơ cầu thủ, nên hệ thống chưa xác định được công nợ cá nhân."}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MatchPaymentPanel({
+  summaries,
+  canManage,
+}: {
+  summaries: MatchPaymentSummary[];
+  canManage: boolean;
 }) {
   return (
     <Card className="overflow-hidden py-0">
-      <CardContent className="relative p-5 sm:p-6">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(16,185,129,0.18),transparent_42%),linear-gradient(225deg,rgba(245,189,73,0.14),transparent_36%)]" />
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_260px] lg:items-center">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="emerald">Healthy cashflow</Badge>
-              <Badge variant="glass">Tháng 05/2026</Badge>
-            </div>
-            <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Số dư hiện tại</p>
-            <p className="mt-2 font-display text-4xl font-semibold sm:text-5xl">{formatCurrency(totalFund)}</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <HeroPill icon={ArrowUpRight} label="Đã thu" value={formatCurrency(collected)} />
-              <HeroPill icon={ReceiptText} label="Dự kiến" value={formatCurrency(expectedIncome)} />
-              <HeroPill icon={UsersRound} label="Đã đóng" value={`${paidCount}/${paidCount + unpaidCount}`} />
-            </div>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.055] p-4">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tiến độ thu</p>
-                <p className="mt-2 font-display text-3xl font-semibold">{collectionRate}%</p>
-              </div>
-              <Badge variant={unpaidCount > 0 ? "gold" : "emerald"}>{unpaidCount} còn nợ</Badge>
-            </div>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-emerald shadow-emerald" style={{ width: `${collectionRate}%` }} />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-md border border-emerald/20 bg-emerald/10 p-3">
-                <p className="text-muted-foreground">Người đã đóng</p>
-                <p className="font-display text-2xl font-semibold text-emerald">{paidCount}</p>
-              </div>
-              <div className="rounded-md border border-gold/20 bg-gold/10 p-3">
-                <p className="text-muted-foreground">Người còn nợ</p>
-                <p className="font-display text-2xl font-semibold text-gold">{unpaidCount}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function HeroPill({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.045] p-3">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="size-4 text-gold" />
-        {label}
-      </div>
-      <p className="mt-2 font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function CashflowChart({ data }: { data: MonthlyCashflow[] }) {
-  const maxValue = Math.max(...data.flatMap((item) => [item.income, item.expense]));
-
-  return (
-    <Card className="py-0">
-      <CardHeader className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CalendarDays className="size-5 text-emerald" />
-            Cashflow 5 tháng
-          </CardTitle>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-emerald" />
-              Thu
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-gold" />
-              Chi
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-5">
-        <div className="flex h-64 items-end gap-3 overflow-hidden rounded-lg border border-white/10 bg-white/[0.035] p-4 sm:gap-5">
-          {data.map((item) => (
-            <div key={item.month} className="flex h-full min-w-0 flex-1 flex-col justify-end gap-2">
-              <div className="flex flex-1 items-end justify-center gap-1.5 sm:gap-2">
-                <Bar value={item.income} maxValue={maxValue} tone="emerald" />
-                <Bar value={item.expense} maxValue={maxValue} tone="gold" />
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-semibold">{item.month}</p>
-                <p className="hidden text-[10px] text-muted-foreground sm:block">{compactCurrency(item.income)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Bar({ value, maxValue, tone }: { value: number; maxValue: number; tone: "emerald" | "gold" }) {
-  const height = Math.max(12, Math.round((value / maxValue) * 100));
-
-  return (
-    <div
-      className={cn(
-        "w-full max-w-8 rounded-t-md transition-all",
-        tone === "emerald" ? "bg-emerald shadow-emerald" : "bg-gold shadow-gold",
-      )}
-      style={{ height: `${height}%` }}
-      title={formatCurrency(value)}
-    />
-  );
-}
-
-function ExpenseBreakdown() {
-  const totalExpense = expenseBreakdown.reduce((sum, item) => sum + item.value, 0);
-  const segments = expenseBreakdown.reduce<
-    Array<(typeof expenseBreakdown)[number] & { percent: number; start: number; end: number }>
-  >((items, item) => {
-    const start = items.at(-1)?.end ?? 0;
-    const percent = (item.value / totalExpense) * 100;
-
-    return [...items, { ...item, percent, start, end: start + percent }];
-  }, []);
-  const gradient = segments.map((item) => `${item.color} ${item.start}% ${item.end}%`).join(", ");
-
-  return (
-    <Card className="py-0">
-      <CardHeader className="border-b border-white/10 px-5 py-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <ArrowDownRight className="size-5 text-gold" />
-          Cơ cấu chi phí
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-5">
-        <div className="grid gap-5 sm:grid-cols-[150px_1fr] sm:items-center xl:grid-cols-1">
-          <div className="mx-auto grid size-36 place-items-center rounded-full" style={{ background: `conic-gradient(${gradient})` }}>
-            <div className="grid size-24 place-items-center rounded-full border border-white/10 bg-card text-center">
-              <div>
-                <p className="text-xs text-muted-foreground">Tổng chi</p>
-                <p className="font-display text-xl font-semibold">{compactCurrency(totalExpense)}</p>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {segments.map((item) => (
-              <div key={item.label} className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
-                <div className="flex items-center gap-2">
-                  <span className={cn("size-2.5 rounded-full", item.dot)} />
-                  <span className="text-sm font-semibold">{item.label}</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold">{formatCurrency(item.value)}</p>
-                  <p className="text-xs text-muted-foreground">{item.percent.toFixed(0)}%</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MemberPayments({
-  paidMembers,
-  unpaidMembers,
-}: {
-  paidMembers: FundMember[];
-  unpaidMembers: FundMember[];
-}) {
-  return (
-    <Card className="py-0">
       <CardHeader className="border-b border-white/10 px-5 py-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <UsersRound className="size-5 text-emerald" />
-          Thành viên đóng quỹ
+          {canManage ? "Đóng quỹ theo trận" : "Tình trạng đóng quỹ của tôi"}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5 p-5">
-        <PaymentGroup title="Người đã đóng" tone="paid" members={paidMembers} />
-        <PaymentGroup title="Người còn nợ" tone="debt" members={unpaidMembers} />
+      <CardContent className="space-y-4 p-5">
+        {summaries.length ? (
+          summaries.map((summary) => <MatchPaymentCard key={summary.matchId} summary={summary} />)
+        ) : (
+          <div className="rounded-lg border border-dashed border-white/12 bg-white/[0.035] p-6 text-center text-sm text-muted-foreground">
+            Chưa có dữ liệu điểm danh hoặc giao dịch gắn với trận.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function PaymentGroup({
-  title,
-  tone,
-  members,
-}: {
-  title: string;
-  tone: "paid" | "debt";
-  members: FundMember[];
-}) {
+function MatchPaymentCard({ summary }: { summary: MatchPaymentSummary }) {
   return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold">{title}</p>
-        <Badge variant={tone === "paid" ? "emerald" : "gold"}>{members.length}</Badge>
+    <div className="rounded-lg border border-white/10 bg-white/[0.035]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 p-4">
+        <div>
+          <p className="font-semibold">{summary.matchLabel}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Chi phí trận {formatCurrency(summary.totalExpense)} · Mỗi người {formatCurrency(summary.duePerPlayer)}
+          </p>
+        </div>
+        <Badge variant={summary.debtTotal > 0 ? "gold" : "emerald"}>
+          {summary.debtTotal > 0 ? `Còn nợ ${formatCurrency(summary.debtTotal)}` : "Đã đủ"}
+        </Badge>
       </div>
-      <div className="space-y-2">
-        {members.map((member) => {
-          const debt = member.amountDue - member.paidAmount;
-
-          return (
-            <div key={member.id} className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className={cn("grid size-9 shrink-0 place-items-center rounded-md text-sm font-semibold", tone === "paid" ? "bg-emerald/12 text-emerald" : "bg-gold/12 text-gold")}>
-                  {member.shirtNumber}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">{member.paidAt ? `Đã đóng ${member.paidAt}` : "Chưa thanh toán đủ"}</p>
-                </div>
+      <div className="divide-y divide-white/8">
+        {summary.players.map((player) => (
+          <div key={player.playerId} className="flex items-center justify-between gap-3 p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-md bg-white/[0.07] text-sm font-semibold">
+                {player.shirtNumber ?? "-"}
               </div>
-              <div className="text-right">
-                <p className={cn("text-sm font-semibold", debt > 0 ? "text-gold" : "text-emerald")}>
-                  {debt > 0 ? formatCurrency(debt) : "Done"}
-                </p>
-                {member.paidAmount > 0 && debt > 0 ? (
-                  <p className="text-xs text-muted-foreground">đã đóng {compactCurrency(member.paidAmount)}</p>
-                ) : null}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{player.name}</p>
+                <p className="text-xs text-muted-foreground">Đã đóng {formatCurrency(player.paidAmount)}</p>
               </div>
             </div>
-          );
-        })}
+            <div className="text-right">
+              <p className={cn("text-sm font-semibold", player.debtAmount > 0 ? "text-gold" : "text-emerald")}>
+                {player.debtAmount > 0 ? formatCurrency(player.debtAmount) : "Đủ"}
+              </p>
+              <p className="text-xs text-muted-foreground">Cần {formatCurrency(player.dueAmount)}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function TransactionHistory({ transactions }: { transactions: FundTransaction[] }) {
+function TransactionHistory({
+  teamSlug,
+  players,
+  matches,
+  transactions,
+}: {
+  teamSlug: string;
+  players: FinancePlayer[];
+  matches: FinanceMatch[];
+  transactions: FinanceTransaction[];
+}) {
   return (
     <Card className="py-0">
       <CardHeader className="border-b border-white/10 px-5 py-4">
@@ -452,57 +346,177 @@ function TransactionHistory({ transactions }: { transactions: FundTransaction[] 
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ngày</TableHead>
-                <TableHead>Nội dung</TableHead>
-                <TableHead>Loại</TableHead>
-                <TableHead className="text-right">Số tiền</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((transaction) => (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Ngày</TableHead>
+              <TableHead>Nội dung</TableHead>
+              <TableHead>Liên kết</TableHead>
+              <TableHead className="text-right">Số tiền</TableHead>
+              <TableHead className="w-[120px] text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.length ? (
+              transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="text-muted-foreground">{transaction.date}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(transaction.transaction_date)}</TableCell>
                   <TableCell>
                     <p className="font-semibold">{transaction.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{transaction.note}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{transaction.note || transaction.category}</p>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={transaction.type === "income" ? "emerald" : "gold"}>{transaction.category}</Badge>
+                  <TableCell className="text-sm text-muted-foreground">
+                    <p>{transaction.matchLabel || "Không gắn trận"}</p>
+                    {transaction.playerName ? <p>{transaction.playerName}</p> : null}
                   </TableCell>
                   <TableCell className={cn("text-right font-semibold", transaction.type === "income" ? "text-emerald" : "text-gold")}>
                     {transaction.type === "income" ? "+" : "-"}
-                    {formatCurrency(transaction.amount)}
+                    {formatCurrency(transaction.amount_vnd)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <TransactionDialog
+                        teamSlug={teamSlug}
+                        players={players}
+                        matches={matches}
+                        transaction={transaction}
+                        mode="edit"
+                      />
+                      <form action={deleteFundTransactionAction}>
+                        <input type="hidden" name="teamSlug" value={teamSlug} />
+                        <input type="hidden" name="transactionId" value={transaction.id} />
+                        <Button type="submit" variant="destructive" size="icon" aria-label="Xóa giao dịch">
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </form>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="space-y-3 p-4 md:hidden">
-          {transactions.map((transaction) => (
-            <div key={transaction.id} className="rounded-md border border-white/10 bg-white/[0.04] p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{transaction.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {transaction.date} · {transaction.note}
-                  </p>
-                </div>
-                <Badge variant={transaction.type === "income" ? "emerald" : "gold"}>{transaction.category}</Badge>
-              </div>
-              <p className={cn("mt-3 text-right font-semibold", transaction.type === "income" ? "text-emerald" : "text-gold")}>
-                {transaction.type === "income" ? "+" : "-"}
-                {formatCurrency(transaction.amount)}
-              </p>
-            </div>
-          ))}
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                  Chưa có giao dịch quỹ.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
+  );
+}
+
+function TransactionDialog({
+  teamSlug,
+  players,
+  matches,
+  mode,
+  transaction,
+}: {
+  teamSlug: string;
+  players: FinancePlayer[];
+  matches: FinanceMatch[];
+  mode: "create" | "edit";
+  transaction?: FinanceTransaction;
+}) {
+  const action = mode === "create" ? createFundTransactionAction : updateFundTransactionAction;
+  const [state, formAction] = useActionState(action, initialState);
+  const title = mode === "create" ? "Thêm thu/chi" : "Sửa giao dịch";
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant={mode === "create" ? "gold" : "outline"} size={mode === "create" ? "default" : "icon"}>
+          {mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
+          {mode === "create" ? "Thêm thu/chi" : <span className="sr-only">Sửa giao dịch</span>}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Gắn `match` và `player` cho khoản thu để tính người đã đóng/còn nợ theo từng trận.
+          </DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="grid gap-4">
+          <input type="hidden" name="teamSlug" value={teamSlug} />
+          {transaction ? <input type="hidden" name="transactionId" value={transaction.id} /> : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-medium">
+              Loại
+              <select name="type" defaultValue={transaction?.type ?? "income"} className={fieldClass}>
+                <option value="income">Thu</option>
+                <option value="expense">Chi</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">
+              Ngày
+              <Input name="transactionDate" type="date" defaultValue={transaction?.transaction_date ?? new Date().toISOString().slice(0, 10)} />
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-sm font-medium">
+            Nội dung
+            <Input name="title" defaultValue={transaction?.title ?? ""} placeholder="VD: Thu quỹ trận Chủ nhật" required />
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-medium">
+              Danh mục
+              <Input name="category" defaultValue={transaction?.category ?? "Quỹ"} placeholder="Quỹ, Sân, Nước..." required />
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">
+              Số tiền
+              <Input name="amountVnd" type="number" min={1} step={1} defaultValue={transaction?.amount_vnd ?? ""} required />
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-sm font-medium">
+            Trận đấu
+            <select name="matchId" defaultValue={transaction?.match_id ?? ""} className={fieldClass}>
+              <option value="">Không gắn trận</option>
+              {matches.map((match) => (
+                <option key={match.id} value={match.id}>
+                  {new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(match.starts_at))} - {match.opponent_name || "Chưa có đối thủ"}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5 text-sm font-medium">
+            Cầu thủ đã đóng
+            <select name="playerId" defaultValue={transaction?.player_id ?? ""} className={fieldClass}>
+              <option value="">Không gắn cầu thủ</option>
+              {players.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.shirt_number ? `#${player.shirt_number} ` : ""}
+                  {player.display_name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5 text-sm font-medium">
+            Ghi chú
+            <textarea
+              name="note"
+              defaultValue={transaction?.note ?? ""}
+              rows={3}
+              className={cn(fieldClass, "h-auto resize-none py-3")}
+              placeholder="Thông tin chuyển khoản, hóa đơn, sân..."
+            />
+          </label>
+
+          {state.error ? <p className="text-sm font-medium text-destructive">{state.error}</p> : null}
+          {state.message ? <p className="text-sm font-medium text-emerald">{state.message}</p> : null}
+
+          <Button type="submit" variant="emerald">
+            {mode === "create" ? "Thêm giao dịch" : "Lưu giao dịch"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -25,3 +25,11 @@ export type BalancedTeam = {
   name: string;
   players: BalancePlayer[];
 };
+
+export type BalanceMatchOption = {
+  id: string;
+  opponentName: string | null;
+  venueName: string | null;
+  startsAt: string;
+  status: string;
+};

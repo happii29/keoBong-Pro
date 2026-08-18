@@ -13,8 +13,8 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { FadeIn } from "@/components/motion/fade-in";
 import { Button } from "@/components/ui/button";
-import { formatTeamSlug } from "@/lib/format";
 import { routes } from "@/config/routes";
+import { formatTeamSlug } from "@/lib/format";
 
 import { FundSummaryCard } from "./fund-summary-card";
 import { MatchCard } from "./match-card";
@@ -23,25 +23,29 @@ import { RankingPreview } from "./ranking-preview";
 import { StatCard } from "./stat-card";
 import { TeamSummary } from "./team-summary";
 
-type DashboardOverviewProps = {
-  teamSlug: string;
+export type DashboardMatch = {
+  opponent: string;
+  dateLabel: string;
+  venue: string;
+  format: string;
+  status: string;
+  confirmed: number;
+  pending: number;
+  declined: number;
+  totalPlayers: number;
 };
 
-const upcomingMatch = {
-  opponent: "FC Anh Em",
-  dateLabel: "Thứ 7, 20:30",
-  venue: "Sân Phú Thọ - Sân 3",
-  format: "7v7",
-  status: "Chờ chốt đội",
-  confirmed: 12,
-  pending: 5,
-  declined: 2,
+type DashboardOverviewProps = {
+  teamSlug: string;
+  upcomingMatch?: DashboardMatch;
+  activePlayers: number;
+  injuredPlayers: number;
 };
 
 const rankingPlayers = [
   {
     rank: 1,
-    name: "Minh Nguyễn",
+    name: "Minh Nguyen",
     position: "ST",
     matches: 8,
     score: 8.7,
@@ -49,7 +53,7 @@ const rankingPlayers = [
   },
   {
     rank: 2,
-    name: "Quân Trần",
+    name: "Quan Tran",
     position: "CM",
     matches: 7,
     score: 8.3,
@@ -57,7 +61,7 @@ const rankingPlayers = [
   },
   {
     rank: 3,
-    name: "Hưng Phạm",
+    name: "Hung Pham",
     position: "GK",
     matches: 6,
     score: 8.1,
@@ -65,20 +69,36 @@ const rankingPlayers = [
   },
 ];
 
-export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
+export function DashboardOverview({
+  teamSlug,
+  upcomingMatch,
+  activePlayers,
+  injuredPlayers,
+}: DashboardOverviewProps) {
   const teamName = formatTeamSlug(teamSlug);
+  const match = upcomingMatch ?? {
+    opponent: "Chua co tran sap toi",
+    dateLabel: "Tao tran moi",
+    venue: "Chua chon san",
+    format: "-",
+    status: "No match",
+    confirmed: 0,
+    pending: activePlayers,
+    declined: 0,
+    totalPlayers: activePlayers,
+  };
 
   return (
     <section className="space-y-6">
       <PageHeader
         eyebrow="Team cockpit"
         title={teamName}
-        description="Bức tranh vận hành trong ngày: lịch đá, điểm danh, quỹ đội, phong độ cầu thủ và các thao tác nhanh cho captain."
+        description="Buc tranh van hanh trong ngay: lich da, diem danh, quy doi, phong do cau thu va cac thao tac nhanh cho captain."
         action={
           <Button asChild variant="gold" size="lg">
             <Link href={routes.matches(teamSlug)}>
               <Plus className="size-4" />
-              Tạo trận
+              Tao tran
             </Link>
           </Button>
         }
@@ -88,34 +108,34 @@ export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
         <FadeIn delay={0}>
           <StatCard
             icon={CalendarDays}
-            label="Trận sắp tới"
-            value="20:30"
-            detail="Thứ 7 tuần này"
+            label="Tran sap toi"
+            value={upcomingMatch ? match.dateLabel.split(",").at(-1)?.trim() ?? match.dateLabel : "-"}
+            detail={upcomingMatch ? match.dateLabel : "Chua co lich"}
             tone="gold"
           />
         </FadeIn>
         <FadeIn delay={0.03}>
           <StatCard
             icon={CheckCircle2}
-            label="Điểm danh"
-            value="12/19"
-            detail="5 chưa phản hồi"
+            label="Diem danh"
+            value={`${match.confirmed}/${match.totalPlayers}`}
+            detail={`${match.pending} chua phan hoi`}
             tone="emerald"
           />
         </FadeIn>
         <FadeIn delay={0.06}>
           <StatCard
             icon={WalletCards}
-            label="Quỹ đội"
+            label="Quy doi"
             value="3.8tr"
-            detail="+650k tháng này"
+            detail="+650k thang nay"
             tone="slate"
           />
         </FadeIn>
         <FadeIn delay={0.09}>
           <StatCard
             icon={Trophy}
-            label="Top tháng"
+            label="Top thang"
             value="Minh"
             detail="8.7 rating"
             tone="gold"
@@ -125,18 +145,18 @@ export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div className="space-y-4">
-          <MatchCard match={upcomingMatch} />
+          <MatchCard match={match} />
           <div className="grid gap-4 lg:grid-cols-2">
             <TeamSummary
-              confirmed={upcomingMatch.confirmed}
-              pending={upcomingMatch.pending}
-              declined={upcomingMatch.declined}
-              totalPlayers={19}
+              confirmed={match.confirmed}
+              pending={match.pending}
+              declined={match.declined}
+              totalPlayers={Math.max(match.totalPlayers, 1)}
             />
             <FundSummaryCard
-              balance="3.800.000đ"
-              monthlyIncome="1.250.000đ"
-              monthlyExpense="600.000đ"
+              balance="3.800.000d"
+              monthlyIncome="1.250.000d"
+              monthlyExpense="600.000d"
               unpaidCount={4}
             />
           </div>
@@ -151,9 +171,9 @@ export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
       <div className="grid gap-4 lg:grid-cols-3">
         <StatCard
           icon={UsersRound}
-          label="Đội hình khả dụng"
-          value="16"
-          detail="3 cầu thủ chấn thương / bận dài hạn"
+          label="Doi hinh kha dung"
+          value={activePlayers.toString()}
+          detail={`${injuredPlayers} cau thu chan thuong / inactive`}
           tone="emerald"
           variant="wide"
         />
@@ -161,15 +181,15 @@ export function DashboardOverview({ teamSlug }: DashboardOverviewProps) {
           icon={MessageCircle}
           label="Zalo workflow"
           value="Ready"
-          detail="Sẵn sàng nối n8n webhook"
+          detail="San sang noi n8n webhook"
           tone="slate"
           variant="wide"
         />
         <StatCard
           icon={Clock3}
-          label="Việc cần làm"
-          value="3"
-          detail="Chốt sân, gửi nhắc, kiểm tra quỹ"
+          label="Viec can lam"
+          value={upcomingMatch && match.pending > 0 ? "1" : "0"}
+          detail={upcomingMatch && match.pending > 0 ? "Nhac nguoi chua diem danh" : "Khong co viec gap"}
           tone="gold"
           variant="wide"
         />

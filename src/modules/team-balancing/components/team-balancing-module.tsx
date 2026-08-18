@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Clipboard,
@@ -20,10 +21,18 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import type { BalancePlayer, BalancedTeam, PlayerPosition } from "../team-balancing.types";
+import type {
+  BalanceMatchOption,
+  BalancePlayer,
+  BalancedTeam,
+  PlayerPosition,
+} from "../team-balancing.types";
 
 type TeamBalancingModuleProps = {
   teamSlug: string;
+  matches: BalanceMatchOption[];
+  selectedMatchId: string | null;
+  players: BalancePlayer[];
 };
 
 type PositionGroup = "GK" | "DEF" | "MID" | "ATT";
@@ -40,23 +49,6 @@ const positionGroups: Record<PlayerPosition, PositionGroup> = {
   RW: "ATT",
   ST: "ATT",
 };
-
-const players: BalancePlayer[] = [
-  { id: "p1", name: "Minh Nguyễn", shirtNumber: 9, level: 8.8, position: "ST" },
-  { id: "p2", name: "Quân Trần", shirtNumber: 8, level: 8.2, position: "CM" },
-  { id: "p3", name: "Hưng Phạm", shirtNumber: 1, level: 7.8, position: "GK", isGoalkeeper: true },
-  { id: "p4", name: "Long Lê", shirtNumber: 5, level: 7.4, position: "CB", isLate: true },
-  { id: "p5", name: "Tuấn Anh", shirtNumber: 11, level: 8.5, position: "LW" },
-  { id: "p6", name: "Khải Võ", shirtNumber: 2, level: 7.1, position: "RB" },
-  { id: "p7", name: "Duy Hoàng", shirtNumber: 6, level: 7.7, position: "DM" },
-  { id: "p8", name: "Nam Phạm", shirtNumber: 7, level: 8.0, position: "RW" },
-  { id: "p9", name: "Bảo Trần", shirtNumber: 4, level: 7.3, position: "CB" },
-  { id: "p10", name: "Khoa Đặng", shirtNumber: 10, level: 8.6, position: "AM" },
-  { id: "p11", name: "Phúc Lâm", shirtNumber: 12, level: 6.9, position: "LB" },
-  { id: "p12", name: "Thắng Bùi", shirtNumber: 14, level: 7.5, position: "CM", isLate: true },
-  { id: "p13", name: "Tín Vũ", shirtNumber: 22, level: 7.2, position: "GK", isGoalkeeper: true },
-  { id: "p14", name: "Sơn Cao", shirtNumber: 17, level: 7.9, position: "ST" },
-];
 
 function playerWeight(player: BalancePlayer) {
   return player.level - (player.isLate ? 0.35 : 0);
@@ -86,7 +78,7 @@ function placementCost(team: BalancePlayer[], otherTeam: BalancePlayer[], player
   return Math.abs(nextScore - otherScore) + Math.max(0, groupPenalty) * 0.55 + keeperPenalty + sizePenalty;
 }
 
-function balanceTeams(seed: number): BalancedTeam[] {
+function balanceTeams(seed: number, players: BalancePlayer[]): BalancedTeam[] {
   const indexedPlayers = players.map((player, index) => ({ player, index }));
   const ordered = indexedPlayers
     .sort((a, b) => {
@@ -142,7 +134,7 @@ function buildZaloMessage(teams: BalancedTeam[]) {
             .filter(Boolean)
             .join(", ");
 
-          return `${index + 1}. #${player.shirtNumber} ${player.name} (${tags})`;
+          return `${index + 1}. #${player.shirtNumber || "-"} ${player.name} (${tags})`;
         })
         .join("\n");
 
@@ -151,26 +143,41 @@ function buildZaloMessage(teams: BalancedTeam[]) {
     .join("\n\n");
 }
 
-export function TeamBalancingModule({ teamSlug }: TeamBalancingModuleProps) {
+function formatMatchLabel(match: BalanceMatchOption) {
+  const date = new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(match.startsAt));
+
+  return `${date} - ${match.opponentName || "Chưa có đối thủ"}`;
+}
+
+export function TeamBalancingModule({ teamSlug, matches, selectedMatchId, players }: TeamBalancingModuleProps) {
   const teamName = formatTeamSlug(teamSlug);
   const [seed, setSeed] = useState(1);
   const { copied, copy } = useCopyToClipboard(1600);
-  const teams = useMemo(() => balanceTeams(seed), [seed]);
+  const teams = useMemo(() => balanceTeams(seed, players), [players, seed]);
   const message = useMemo(() => buildZaloMessage(teams), [teams]);
+  const selectedMatch = matches.find((match) => match.id === selectedMatchId);
+  const hasEnoughPlayers = players.length >= 2;
+  const averageLevel =
+    players.length > 0 ? (players.reduce((sum, player) => sum + player.level, 0) / players.length).toFixed(1) : "0.0";
 
   return (
     <section className="space-y-6">
       <PageHeader
         eyebrow="Team balancing"
         title="Chia đội tự động"
-        description={`${teamName} · Cân theo level, position, goalkeeper và late players`}
+        description={`${teamName} · Cân theo level, position, goalkeeper và late players từ điểm danh trận đấu`}
         action={
           <div className="flex flex-wrap gap-2">
-            <Button variant="luxury" onClick={() => setSeed((current) => current + 1)}>
+            <Button variant="luxury" onClick={() => setSeed((current) => current + 1)} disabled={!hasEnoughPlayers}>
               <RefreshCw className="size-4" />
               Chia lại
             </Button>
-            <Button variant="gold" onClick={() => void copy(message)}>
+            <Button variant="gold" onClick={() => void copy(message)} disabled={!hasEnoughPlayers}>
               <Clipboard className="size-4" />
               {copied ? "Đã copy" : "Copy lineup gửi Zalo"}
             </Button>
@@ -178,28 +185,58 @@ export function TeamBalancingModule({ teamSlug }: TeamBalancingModuleProps) {
         }
       />
 
+      <Card className="py-0">
+        <CardHeader className="border-b border-white/10 px-5 py-4">
+          <CardTitle className="text-lg">Chọn trận đấu</CardTitle>
+          {selectedMatch ? (
+            <p className="text-sm text-muted-foreground">
+              {formatMatchLabel(selectedMatch)}
+              {selectedMatch.venueName ? ` · ${selectedMatch.venueName}` : ""}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Chưa có trận đấu nào để chia đội.</p>
+          )}
+        </CardHeader>
+        {matches.length > 0 ? (
+          <CardContent className="flex flex-wrap gap-2 p-5">
+            {matches.map((match) => (
+              <Button key={match.id} asChild variant={match.id === selectedMatchId ? "gold" : "outline"} size="sm">
+                <Link href={`/teams/${teamSlug}/balance?matchId=${match.id}`}>{formatMatchLabel(match)}</Link>
+              </Button>
+            ))}
+          </CardContent>
+        ) : null}
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-4">
         <Metric icon={UsersRound} label="Cầu thủ" value={players.length.toString()} />
-        <Metric
-          icon={Trophy}
-          label="Level avg"
-          value={(players.reduce((sum, player) => sum + player.level, 0) / players.length).toFixed(1)}
-        />
+        <Metric icon={Trophy} label="Level avg" value={averageLevel} />
         <Metric icon={Goal} label="Goalkeeper" value={players.filter((player) => player.isGoalkeeper).length.toString()} />
         <Metric icon={Timer} label="Late players" value={players.filter((player) => player.isLate).length.toString()} />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <TacticalBoard teams={teams} />
-        <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
-            {teams.map((team) => (
-              <TeamScoreCard key={team.key} team={team} />
-            ))}
+      {hasEnoughPlayers ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+          <TacticalBoard teams={teams} />
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
+              {teams.map((team) => (
+                <TeamScoreCard key={team.key} team={team} />
+              ))}
+            </div>
+            <Comparison teams={teams} />
           </div>
-          <Comparison teams={teams} />
         </div>
-      </div>
+      ) : (
+        <Card className="py-0">
+          <CardContent className="p-6">
+            <p className="font-semibold">Chưa đủ cầu thủ để chia đội.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Hãy vào trang Matches, chọn trận đấu và cập nhật điểm danh thành going, late hoặc goalkeeper.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </section>
   );
 }
@@ -290,7 +327,7 @@ function PlayerRow({ player, tone }: { player: BalancePlayer; tone: BalancedTeam
             tone === "red" ? "bg-red-400/16 text-red-100" : "bg-sky-400/16 text-sky-100",
           )}
         >
-          {player.shirtNumber}
+          {player.shirtNumber || "-"}
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{player.name}</p>
@@ -352,9 +389,7 @@ function TacticalBoard({ teams }: { teams: BalancedTeam[] }) {
                 </div>
               ))}
             </div>
-            <div className={cn("text-xs text-white/60", team.key === "blue" && "text-right")}>
-              Tactical board
-            </div>
+            <div className={cn("text-xs text-white/60", team.key === "blue" && "text-right")}>Tactical board</div>
           </div>
         ))}
       </div>

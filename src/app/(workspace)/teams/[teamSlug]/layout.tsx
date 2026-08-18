@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { WorkspaceShell } from "@/components/app/workspace-shell";
+import { requireTeamWorkspaceAccess } from "@/modules/auth/guards";
 
 type TeamWorkspaceLayoutProps = {
   children: ReactNode;
@@ -14,6 +15,8 @@ export default async function TeamWorkspaceLayout({
   params,
 }: TeamWorkspaceLayoutProps) {
   const { teamSlug } = await params;
+
+  await requireTeamWorkspaceAccess(teamSlug);
 
   return <WorkspaceShell teamSlug={teamSlug}>{children}</WorkspaceShell>;
 }

@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { isSupabaseConfigured } from "@/services/supabase";
 import { createSupabaseServerClient } from "@/services/supabase/server-client";
 
-export async function GET() {
+export function GET() {
+  redirect("/login");
+}
+
+export async function POST() {
   if (isSupabaseConfigured()) {
     const supabase = await createSupabaseServerClient();
 

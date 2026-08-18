@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { isSupabaseConfigured } from "@/services/supabase";
@@ -103,4 +104,31 @@ export async function registerAction(
   );
 
   redirect(redirectPath);
+}
+
+export async function loginWithGoogleAction(formData: FormData) {
+  if (!isSupabaseConfigured()) {
+    redirect("/login");
+  }
+
+  const requestedRedirect = getSafeRedirectPath(formData.get("redirectTo"));
+  const headerStore = await headers();
+  const origin =
+    headerStore.get("origin") ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
+  const nextPath = requestedRedirect ?? "/teams/new";
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+    },
+  });
+
+  if (error || !data.url) {
+    redirect(`/login?error=${encodeURIComponent(error?.message ?? "Không thể đăng nhập Google.")}`);
+  }
+
+  redirect(data.url);
 }

@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  ListChecks,
   MessageCircle,
   Plus,
   Trophy,
@@ -35,45 +36,51 @@ export type DashboardMatch = {
   totalPlayers: number;
 };
 
+export type DashboardFundSummary = {
+  balance: string;
+  monthlyIncome: string;
+  monthlyExpense: string;
+  debt: string;
+  unpaidCount: number;
+};
+
+export type DashboardRankingPlayer = {
+  rank: number;
+  name: string;
+  position: string;
+  matches: number;
+  score: number;
+  trend: string;
+};
+
+export type DashboardTask = {
+  title: string;
+  href: string;
+  tone: "gold" | "emerald";
+};
+
 type DashboardOverviewProps = {
   teamSlug: string;
   upcomingMatch?: DashboardMatch;
   activePlayers: number;
   injuredPlayers: number;
+  fundSummary: DashboardFundSummary;
+  rankingPlayers: DashboardRankingPlayer[];
+  tasks: DashboardTask[];
+  hasPlayers: boolean;
+  hasTransactions: boolean;
 };
-
-const rankingPlayers = [
-  {
-    rank: 1,
-    name: "Minh Nguyen",
-    position: "ST",
-    matches: 8,
-    score: 8.7,
-    trend: "+12%",
-  },
-  {
-    rank: 2,
-    name: "Quan Tran",
-    position: "CM",
-    matches: 7,
-    score: 8.3,
-    trend: "+8%",
-  },
-  {
-    rank: 3,
-    name: "Hung Pham",
-    position: "GK",
-    matches: 6,
-    score: 8.1,
-    trend: "+5%",
-  },
-];
 
 export function DashboardOverview({
   teamSlug,
   upcomingMatch,
   activePlayers,
   injuredPlayers,
+  fundSummary,
+  rankingPlayers,
+  tasks,
+  hasPlayers,
+  hasTransactions,
 }: DashboardOverviewProps) {
   const teamName = formatTeamSlug(teamSlug);
   const match = upcomingMatch ?? {
@@ -87,13 +94,14 @@ export function DashboardOverview({
     declined: 0,
     totalPlayers: activePlayers,
   };
+  const topPlayer = rankingPlayers[0];
 
   return (
     <section className="space-y-6">
       <PageHeader
         eyebrow="Team cockpit"
         title={teamName}
-        description="Buc tranh van hanh trong ngay: lich da, diem danh, quy doi, phong do cau thu va cac thao tac nhanh cho captain."
+        description="Tong quan van hanh: lich da, diem danh, quy doi, phong do cau thu va viec can lam."
         action={
           <Button asChild variant="gold" size="lg">
             <Link href={routes.matches(teamSlug)}>
@@ -127,8 +135,8 @@ export function DashboardOverview({
           <StatCard
             icon={WalletCards}
             label="Quy doi"
-            value="3.8tr"
-            detail="+650k thang nay"
+            value={fundSummary.balance}
+            detail={`${fundSummary.debt} cong no`}
             tone="slate"
           />
         </FadeIn>
@@ -136,8 +144,8 @@ export function DashboardOverview({
           <StatCard
             icon={Trophy}
             label="Top thang"
-            value="Minh"
-            detail="8.7 rating"
+            value={topPlayer?.name.split(" ").at(-1) ?? "-"}
+            detail={topPlayer ? `${topPlayer.score} diem` : "Chua co stats"}
             tone="gold"
           />
         </FadeIn>
@@ -154,19 +162,57 @@ export function DashboardOverview({
               totalPlayers={Math.max(match.totalPlayers, 1)}
             />
             <FundSummaryCard
-              balance="3.800.000d"
-              monthlyIncome="1.250.000d"
-              monthlyExpense="600.000d"
-              unpaidCount={4}
+              balance={fundSummary.balance}
+              monthlyIncome={fundSummary.monthlyIncome}
+              monthlyExpense={fundSummary.monthlyExpense}
+              unpaidCount={fundSummary.unpaidCount}
             />
           </div>
         </div>
 
         <div className="space-y-4">
           <QuickActionGrid teamSlug={teamSlug} />
-          <RankingPreview players={rankingPlayers} />
+          {rankingPlayers.length ? (
+            <RankingPreview players={rankingPlayers} />
+          ) : (
+            <EmptyPanel
+              title="Chua co ranking thang nay"
+              description="Nhap ket qua tran va stats cau thu de dashboard tu hien top player."
+              href={routes.ranking(teamSlug)}
+              action="Nhap stats"
+            />
+          )}
         </div>
       </div>
+
+      {!upcomingMatch || !hasPlayers || !hasTransactions ? (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {!hasPlayers ? (
+            <EmptyPanel
+              title="Chua co cau thu"
+              description="Them danh sach cau thu de dung diem danh, chia doi va ranking."
+              href={routes.players(teamSlug)}
+              action="Them cau thu"
+            />
+          ) : null}
+          {!upcomingMatch ? (
+            <EmptyPanel
+              title="Chua co tran sap toi"
+              description="Tao tran moi de doi bat dau diem danh va tinh quy."
+              href={routes.matches(teamSlug)}
+              action="Tao tran"
+            />
+          ) : null}
+          {!hasTransactions ? (
+            <EmptyPanel
+              title="Chua co giao dich quy"
+              description="Them khoan thu/chi dau tien de theo doi so du doi."
+              href={routes.finance(teamSlug)}
+              action="Them thu/chi"
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <StatCard
@@ -188,12 +234,58 @@ export function DashboardOverview({
         <StatCard
           icon={Clock3}
           label="Viec can lam"
-          value={upcomingMatch && match.pending > 0 ? "1" : "0"}
-          detail={upcomingMatch && match.pending > 0 ? "Nhac nguoi chua diem danh" : "Khong co viec gap"}
+          value={tasks.length.toString()}
+          detail={tasks[0]?.title ?? "Khong co viec gap"}
           tone="gold"
           variant="wide"
         />
       </div>
+
+      {tasks.length ? <TaskList tasks={tasks} /> : null}
     </section>
+  );
+}
+
+function EmptyPanel({
+  title,
+  description,
+  href,
+  action,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  action: string;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-white/12 bg-white/[0.035] p-5">
+      <p className="font-display text-lg font-semibold">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+      <Button asChild variant="luxury" className="mt-4">
+        <Link href={href}>{action}</Link>
+      </Button>
+    </div>
+  );
+}
+
+function TaskList({ tasks }: { tasks: DashboardTask[] }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <ListChecks className="size-5 text-gold" />
+        <p className="font-display text-lg font-semibold">Viec can lam</p>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {tasks.map((task) => (
+          <Link
+            key={task.title}
+            href={task.href}
+            className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold transition hover:border-emerald/30 hover:bg-white/[0.065]"
+          >
+            {task.title}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Bell, LogOut, Search } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -30,11 +29,11 @@ export function TopBar({ teamSlug }: TopBarProps) {
             <Bell className="size-4" />
           </Button>
           <ThemeToggle />
-          <Button asChild variant="ghost" size="icon" aria-label="Dang xuat">
-            <Link href="/logout">
+          <form action="/logout" method="post">
+            <Button type="submit" variant="ghost" size="icon" aria-label="Dang xuat">
               <LogOut className="size-4" />
-            </Link>
-          </Button>
+            </Button>
+          </form>
         </div>
       </div>
     </header>

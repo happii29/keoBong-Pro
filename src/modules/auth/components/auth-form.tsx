@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { Globe2, Loader2, LogIn, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { appConfig } from "@/config/app";
 
 import type { AuthFormState } from "../auth.types";
-import { loginAction, registerAction } from "../actions";
+import { loginAction, loginWithGoogleAction, registerAction } from "../actions";
 
 type AuthMode = "login" | "register";
 
@@ -65,6 +65,20 @@ export function AuthForm({ mode, redirectTo }: AuthFormProps) {
         </CardHeader>
 
         <CardContent className="p-5">
+          <form action={loginWithGoogleAction}>
+            <input type="hidden" name="redirectTo" value={redirectTo ?? ""} />
+            <Button type="submit" variant="luxury" size="lg" className="w-full">
+              <Globe2 className="size-4" />
+              Tiếp tục với Google
+            </Button>
+          </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="h-px flex-1 bg-white/10" />
+            hoặc
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="redirectTo" value={redirectTo ?? ""} />
 

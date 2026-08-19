@@ -34,7 +34,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
@@ -289,8 +288,14 @@ function MatchForm({ teamSlug, onSuccess }: { teamSlug: string; onSuccess?: () =
         </div>
       ) : null}
 
-      <Button type="submit" variant="gold" className="w-full" disabled={pending}>
-        {pending ? <SoccerLoader /> : <Plus className="size-4" />}
+      <Button
+        type="submit"
+        variant="gold"
+        className="w-full"
+        loading={pending}
+        loadingText="Đang tạo..."
+      >
+        <Plus className="size-4" />
         {pending ? "Đang tạo..." : "Tạo trận đấu"}
       </Button>
     </form>
@@ -563,9 +568,19 @@ function StatusButton({
 }) {
   const Icon =
     icon === "complete" ? CheckCircle2 : icon === "cancel" ? XCircle : RotateCcw;
+  const [state, formAction, pending] = useActionState(
+    (_previousState: MatchFormState, formData: FormData) =>
+      updateMatchStatusAction(formData),
+    initialState,
+  );
+
+  useActionFeedback(state, pending, {
+    successTitle: "Đã cập nhật trận đấu",
+    errorTitle: "Không thể cập nhật trận đấu",
+  });
 
   return (
-    <form action={updateMatchStatusAction}>
+    <form action={formAction}>
       <input type="hidden" name="teamSlug" value={teamSlug} />
       <input type="hidden" name="matchId" value={matchId} />
       <input type="hidden" name="status" value={status} />
@@ -573,6 +588,8 @@ function StatusButton({
         type="submit"
         variant={icon === "complete" ? "emerald" : "luxury"}
         size="sm"
+        loading={pending}
+        loadingText="Đang cập nhật..."
       >
         <Icon className="size-4" />
         {label}
@@ -652,8 +669,19 @@ function AttendanceStatusButton({
   active: boolean;
   disabled: boolean;
 }) {
+  const [state, formAction, pending] = useActionState(
+    (_previousState: MatchFormState, formData: FormData) =>
+      updateAttendanceStatusAction(formData),
+    initialState,
+  );
+
+  useActionFeedback(state, pending, {
+    successTitle: "Đã cập nhật điểm danh",
+    errorTitle: "Không thể cập nhật điểm danh",
+  });
+
   return (
-    <form action={updateAttendanceStatusAction}>
+    <form action={formAction}>
       <input type="hidden" name="teamSlug" value={teamSlug} />
       <input type="hidden" name="matchId" value={matchId} />
       <input type="hidden" name="playerId" value={playerId} />
@@ -663,6 +691,8 @@ function AttendanceStatusButton({
         variant={active ? "emerald" : "luxury"}
         size="sm"
         disabled={disabled}
+        loading={pending}
+        loadingText="Đang lưu..."
       >
         {attendanceStatusLabel(status)}
       </Button>

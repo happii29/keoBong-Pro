@@ -57,27 +57,33 @@ export async function createMatchAction(
   return { message: "Đã tạo trận đấu." };
 }
 
-export async function updateMatchStatusAction(formData: FormData) {
+export async function updateMatchStatusAction(formData: FormData): Promise<MatchFormState> {
   const context = await getMatchActionContext(formData);
 
   if ("error" in context) {
-    return;
+    return context;
   }
 
   const matchId = String(formData.get("matchId") ?? "");
   const status = String(formData.get("status") ?? "") as Enums<"match_status">;
 
   if (!matchId || !statusTransitions.includes(status)) {
-    return;
+    return { error: "Tráº¡ng thÃ¡i tráº­n Ä‘áº¥u khÃ´ng há»£p lá»‡." };
   }
 
-  await context.supabase
+  const { error } = await context.supabase
     .from("matches")
     .update({ status })
     .eq("id", matchId)
     .eq("team_id", context.team.id);
 
+  if (error) {
+    return { error: error.message || "KhÃ´ng thá»ƒ cáº­p nháº­t tráº­n Ä‘áº¥u." };
+  }
+
   revalidatePath(`/teams/${context.team.slug}/matches`);
+
+  return { message: "ÄÃ£ cáº­p nháº­t tráº¡ng thÃ¡i tráº­n." };
 }
 
 async function getMatchActionContext(formData: FormData) {

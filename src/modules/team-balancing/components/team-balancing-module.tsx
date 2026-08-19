@@ -157,7 +157,7 @@ function formatMatchLabel(match: BalanceMatchOption) {
 export function TeamBalancingModule({ teamSlug, matches, selectedMatchId, players }: TeamBalancingModuleProps) {
   const teamName = formatTeamSlug(teamSlug);
   const [seed, setSeed] = useState(1);
-  const { copied, copy } = useCopyToClipboard(1600);
+  const { copied, copying, copy } = useCopyToClipboard(1600);
   const teams = useMemo(() => balanceTeams(seed, players), [players, seed]);
   const message = useMemo(() => buildZaloMessage(teams), [teams]);
   const selectedMatch = matches.find((match) => match.id === selectedMatchId);
@@ -177,7 +177,13 @@ export function TeamBalancingModule({ teamSlug, matches, selectedMatchId, player
               <RefreshCw className="size-4" />
               Chia lại
             </Button>
-            <Button variant="gold" onClick={() => void copy(message)} disabled={!hasEnoughPlayers}>
+            <Button
+              variant="gold"
+              onClick={() => void copy(message)}
+              disabled={!hasEnoughPlayers}
+              loading={copying}
+              loadingText="Đang copy..."
+            >
               <Clipboard className="size-4" />
               {copied ? "Đã copy" : "Copy lineup gửi Zalo"}
             </Button>

@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { joinTeamBySlugAction } from "../actions";
@@ -70,8 +69,15 @@ export function JoinTeamForm() {
             </div>
           ) : null}
 
-          <Button type="submit" variant="emerald" size="lg" className="w-full">
-            {pending ? <SoccerLoader /> : <LogIn className="size-4" />}
+          <Button
+            type="submit"
+            variant="emerald"
+            size="lg"
+            className="w-full"
+            loading={pending}
+            loadingText="Đang tham gia..."
+          >
+            <LogIn className="size-4" />
             {pending ? "Đang tham gia..." : "Tham gia đội"}
           </Button>
         </form>

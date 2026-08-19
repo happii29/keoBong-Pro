@@ -94,26 +94,32 @@ export async function updatePlayerAction(
   return { message: "Đã cập nhật cầu thủ." };
 }
 
-export async function deletePlayerAction(formData: FormData) {
+export async function deletePlayerAction(formData: FormData): Promise<PlayerFormState> {
   const context = await getPlayerActionContext(formData);
 
   if ("error" in context) {
-    return;
+    return context;
   }
 
   const playerId = String(formData.get("playerId") ?? "");
 
   if (!playerId) {
-    return;
+    return { error: "Thiáº¿u mÃ£ cáº§u thá»§." };
   }
 
-  await context.supabase
+  const { error } = await context.supabase
     .from("players")
     .delete()
     .eq("id", playerId)
     .eq("team_id", context.team.id);
 
+  if (error) {
+    return { error: error.message || "KhÃ´ng thá»ƒ xÃ³a cáº§u thá»§." };
+  }
+
   revalidatePath(`/teams/${context.team.slug}/players`);
+
+  return { message: "ÄÃ£ xÃ³a cáº§u thá»§." };
 }
 
 async function getPlayerActionContext(formData: FormData) {

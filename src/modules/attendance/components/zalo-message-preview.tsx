@@ -13,7 +13,7 @@ type ZaloMessagePreviewProps = {
 };
 
 export function ZaloMessagePreview({ players, counts }: ZaloMessagePreviewProps) {
-  const { copied, copy } = useCopyToClipboard(1800);
+  const { copied, copying, copy } = useCopyToClipboard(1800);
 
   const message = useMemo(() => {
     const goingNames = players
@@ -63,6 +63,8 @@ export function ZaloMessagePreview({ players, counts }: ZaloMessagePreviewProps)
           variant={copied ? "emerald" : "gold"}
           size="lg"
           className="mt-4 w-full"
+          loading={copying}
+          loadingText="Đang copy..."
           onClick={() => void copy(message)}
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}

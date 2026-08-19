@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
+import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 import { appConfig } from "@/config/app";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 
@@ -73,10 +73,15 @@ export function AuthForm({ mode, redirectTo }: AuthFormProps) {
         <CardContent className="p-5">
           <form action={loginWithGoogleAction}>
             <input type="hidden" name="redirectTo" value={redirectTo ?? ""} />
-            <Button type="submit" variant="luxury" size="lg" className="w-full">
+            <PendingSubmitButton
+              variant="luxury"
+              size="lg"
+              className="w-full"
+              pendingText="Đang mở Google..."
+            >
               <Globe2 className="size-4" />
               Tiếp tục với Google
-            </Button>
+            </PendingSubmitButton>
           </form>
 
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
@@ -135,8 +140,15 @@ export function AuthForm({ mode, redirectTo }: AuthFormProps) {
               </div>
             ) : null}
 
-            <Button type="submit" variant="gold" size="lg" className="w-full">
-              {pending ? <SoccerLoader /> : <Icon className="size-4" />}
+            <Button
+              type="submit"
+              variant="gold"
+              size="lg"
+              className="w-full"
+              loading={pending}
+              loadingText={isLogin ? "Đang đăng nhập..." : "Đang đăng ký..."}
+            >
+              <Icon className="size-4" />
               {isLogin ? "Đăng nhập" : "Đăng ký"}
             </Button>
           </form>

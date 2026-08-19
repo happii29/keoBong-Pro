@@ -30,7 +30,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -460,8 +459,14 @@ function MatchStatsForm({
           {state.error ? <p className="font-medium text-destructive">{state.error}</p> : null}
           {state.message ? <p className="font-medium text-emerald">{state.message}</p> : null}
         </div>
-        <Button type="submit" variant="emerald" disabled={!match.players.length || pending}>
-          {pending ? <SoccerLoader /> : <Save className="size-4" />}
+        <Button
+          type="submit"
+          variant="emerald"
+          disabled={!match.players.length}
+          loading={pending}
+          loadingText="Đang lưu..."
+        >
+          <Save className="size-4" />
           Lưu stats
         </Button>
       </div>

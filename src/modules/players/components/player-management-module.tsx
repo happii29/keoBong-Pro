@@ -32,7 +32,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -321,6 +320,16 @@ function PlayerActions({
   teamSlug: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [deleteState, deleteFormAction, deletePending] = useActionState(
+    (_previousState: PlayerFormState, formData: FormData) =>
+      deletePlayerAction(formData),
+    initialState,
+  );
+
+  useActionFeedback(deleteState, deletePending, {
+    successTitle: "Đã xóa cầu thủ",
+    errorTitle: "Không thể xóa cầu thủ",
+  });
 
   return (
     <div className="flex justify-end gap-2">
@@ -342,7 +351,7 @@ function PlayerActions({
         </DialogContent>
       </Dialog>
 
-      <form action={deletePlayerAction}>
+      <form action={deleteFormAction}>
         <input type="hidden" name="teamSlug" value={teamSlug} />
         <input type="hidden" name="playerId" value={player.id} />
         <Button
@@ -350,6 +359,8 @@ function PlayerActions({
           variant="outline"
           size="sm"
           className="text-destructive hover:border-destructive/35"
+          loading={deletePending}
+          loadingText="Đang xóa..."
         >
           <Trash2 className="size-4" />
           Xóa
@@ -479,8 +490,14 @@ function PlayerForm({
         </div>
       ) : null}
 
-      <Button type="submit" variant="gold" className="w-full" disabled={pending}>
-        {pending ? <SoccerLoader /> : mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
+      <Button
+        type="submit"
+        variant="gold"
+        className="w-full"
+        loading={pending}
+        loadingText={mode === "create" ? "Đang thêm..." : "Đang lưu..."}
+      >
+        {mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
         {pending ? "Đang lưu..." : mode === "create" ? "Thêm cầu thủ" : "Lưu thay đổi"}
       </Button>
     </form>

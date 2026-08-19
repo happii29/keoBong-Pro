@@ -2,6 +2,7 @@ import { Bell, LogOut, Search } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { PendingSubmitButton } from "@/components/ui/pending-submit-button";
 import { appConfig } from "@/config/app";
 import { formatTeamSlug } from "@/lib/format";
 
@@ -30,9 +31,14 @@ export function TopBar({ teamSlug }: TopBarProps) {
           </Button>
           <ThemeToggle />
           <form action="/logout" method="post">
-            <Button type="submit" variant="ghost" size="icon" aria-label="Dang xuat">
+            <PendingSubmitButton
+              variant="ghost"
+              size="icon"
+              aria-label="Dang xuat"
+              pendingText={<span className="sr-only">Đang đăng xuất...</span>}
+            >
               <LogOut className="size-4" />
-            </Button>
+            </PendingSubmitButton>
           </form>
         </div>
       </div>

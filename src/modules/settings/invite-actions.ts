@@ -58,29 +58,36 @@ export async function createTeamInviteAction(
 
   return {
     inviteUrl: buildInviteUrl(token),
+    message: "ÄÃ£ táº¡o invite link.",
   };
 }
 
-export async function revokeTeamInviteAction(formData: FormData) {
+export async function revokeTeamInviteAction(formData: FormData): Promise<CreateInviteFormState> {
   const context = await getInviteAdminContext(formData);
 
   if ("error" in context) {
-    return;
+    return context;
   }
 
   const inviteId = String(formData.get("inviteId") ?? "");
 
   if (!inviteId) {
-    return;
+    return { error: "Thiáº¿u mÃ£ invite." };
   }
 
-  await context.supabase
+  const { error } = await context.supabase
     .from("team_invites")
     .update({ revoked_at: new Date().toISOString() })
     .eq("id", inviteId)
     .eq("team_id", context.team.id);
 
+  if (error) {
+    return { error: error.message || "KhÃ´ng thá»ƒ thu há»“i invite." };
+  }
+
   revalidatePath(`/teams/${context.team.slug}/settings`);
+
+  return { message: "ÄÃ£ thu há»“i invite link." };
 }
 
 async function getInviteAdminContext(formData: FormData) {

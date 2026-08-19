@@ -80,27 +80,33 @@ export async function updateFundTransactionAction(
   return { message: "Đã cập nhật giao dịch quỹ." };
 }
 
-export async function deleteFundTransactionAction(formData: FormData) {
+export async function deleteFundTransactionAction(formData: FormData): Promise<FundFormState> {
   const context = await getFundActionContext(formData);
 
   if ("error" in context) {
-    return;
+    return context;
   }
 
   const transactionId = String(formData.get("transactionId") ?? "");
 
   if (!transactionId) {
-    return;
+    return { error: "Thiáº¿u mÃ£ giao dá»‹ch." };
   }
 
-  await context.supabase
+  const { error } = await context.supabase
     .from("fund_transactions")
     .delete()
     .eq("id", transactionId)
     .eq("team_id", context.team.id);
 
+  if (error) {
+    return { error: error.message || "KhÃ´ng thá»ƒ xÃ³a giao dá»‹ch." };
+  }
+
   revalidatePath(`/teams/${context.team.slug}/finance`);
   revalidatePath(`/teams/${context.team.slug}`);
+
+  return { message: "ÄÃ£ xÃ³a giao dá»‹ch quá»¹." };
 }
 
 async function getFundActionContext(formData: FormData) {

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { NavigationProgress } from "@/components/app/navigation-progress";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { appConfig } from "@/config/app";
@@ -27,7 +28,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="vi" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <NavigationProgress />
+            {children}
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

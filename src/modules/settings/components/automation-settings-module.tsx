@@ -121,7 +121,7 @@ export function AutomationSettingsModule({ teamSlug }: AutomationSettingsModuleP
   const [secret, setSecret] = useState("kbp_live_••••••••");
   const [automationEnabled, setAutomationEnabled] = useState(true);
   const [workflows, setWorkflows] = useState(initialWorkflows);
-  const { copied, copy } = useCopyToClipboard(1600);
+  const { copied, copying, copy } = useCopyToClipboard(1600);
 
   const enabledCount = workflows.filter((workflow) => workflow.enabled).length;
   const scheduledCount = workflows.filter((workflow) => workflow.enabled && workflow.status === "scheduled").length;
@@ -204,6 +204,7 @@ export function AutomationSettingsModule({ teamSlug }: AutomationSettingsModuleP
           <ZaloPreview
             preview={zaloPreview}
             copied={copied}
+            copying={copying}
             onCopy={() => void copy(zaloPreview)}
           />
           <FutureWebhookPayload payload={webhookPayload} />
@@ -449,10 +450,12 @@ function AutomationStatusPanel({
 function ZaloPreview({
   preview,
   copied,
+  copying,
   onCopy,
 }: {
   preview: string;
   copied: boolean;
+  copying: boolean;
   onCopy: () => void;
 }) {
   return (
@@ -463,7 +466,13 @@ function ZaloPreview({
             <MessageSquareText className="size-5 text-gold" />
             Zalo message preview
           </CardTitle>
-          <Button variant="luxury" size="sm" onClick={onCopy}>
+          <Button
+            variant="luxury"
+            size="sm"
+            loading={copying}
+            loadingText="Đang copy..."
+            onClick={onCopy}
+          >
             <Clipboard className="size-4" />
             {copied ? "Đã copy" : "Copy"}
           </Button>

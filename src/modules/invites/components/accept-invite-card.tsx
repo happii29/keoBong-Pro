@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { appConfig } from "@/config/app";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { acceptInviteAction } from "../actions";
 import type { AcceptInviteFormState } from "../invite.types";
@@ -24,6 +25,9 @@ export function AcceptInviteCard({ token }: { token: string }) {
     acceptInviteAction,
     initialState,
   );
+  useActionFeedback(state, pending, {
+    errorTitle: "Không thể tham gia đội",
+  });
   const shortToken = token.length > 12 ? `${token.slice(0, 8)}...` : token;
 
   return (
@@ -62,7 +66,14 @@ export function AcceptInviteCard({ token }: { token: string }) {
               </div>
             ) : null}
 
-            <Button type="submit" variant="gold" size="lg" className="w-full">
+            <Button
+              type="submit"
+              variant="gold"
+              size="lg"
+              className="w-full"
+              loading={pending}
+              loadingText="Đang tham gia..."
+            >
               <LogIn className="size-4" />
               {pending ? "Đang tham gia..." : "Tham gia đội"}
             </Button>

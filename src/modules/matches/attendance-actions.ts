@@ -15,7 +15,14 @@ const attendanceStatuses: Array<Enums<"attendance_status">> = [
   "pending",
 ];
 
-export async function updateAttendanceStatusAction(formData: FormData) {
+export type AttendanceActionState = {
+  error?: string;
+  message?: string;
+};
+
+export async function updateAttendanceStatusAction(
+  formData: FormData,
+): Promise<AttendanceActionState> {
   const teamSlug = String(formData.get("teamSlug") ?? "");
   const matchId = String(formData.get("matchId") ?? "");
   const playerId = String(formData.get("playerId") ?? "");
@@ -25,7 +32,7 @@ export async function updateAttendanceStatusAction(formData: FormData) {
   );
 
   if (!teamSlug || !matchId || !playerId || !attendanceStatuses.includes(status)) {
-    return;
+    return { error: "Dá»¯ liá»‡u Ä‘iá»ƒm danh khÃ´ng há»£p lá»‡." };
   }
 
   const { data: team } = await supabase
@@ -35,7 +42,7 @@ export async function updateAttendanceStatusAction(formData: FormData) {
     .maybeSingle();
 
   if (!team) {
-    return;
+    return { error: "KhÃ´ng tÃ¬m tháº¥y Ä‘á»™i bÃ³ng." };
   }
 
   const [{ data: membership }, { data: player }, { data: match }] =
@@ -61,17 +68,17 @@ export async function updateAttendanceStatusAction(formData: FormData) {
     ]);
 
   if (!membership || !player || !match) {
-    return;
+    return { error: "KhÃ´ng tÃ¬m tháº¥y tráº­n hoáº·c cáº§u thá»§." };
   }
 
   const canManageAll = managerRoles.has(membership.role);
   const canManageOwn = player.user_id === user.id;
 
   if (!canManageAll && !canManageOwn) {
-    return;
+    return { error: "Báº¡n khÃ´ng cÃ³ quyá»n cáº­p nháº­t Ä‘iá»ƒm danh nÃ y." };
   }
 
-  await supabase.from("attendance").upsert(
+  const { error } = await supabase.from("attendance").upsert(
     {
       team_id: team.id,
       match_id: match.id,
@@ -85,6 +92,12 @@ export async function updateAttendanceStatusAction(formData: FormData) {
     },
   );
 
+  if (error) {
+    return { error: error.message || "KhÃ´ng thá»ƒ cáº­p nháº­t Ä‘iá»ƒm danh." };
+  }
+
   revalidatePath(`/teams/${team.slug}/matches`);
   revalidatePath(`/teams/${team.slug}`);
+
+  return { message: "ÄÃ£ cáº­p nháº­t Ä‘iá»ƒm danh." };
 }

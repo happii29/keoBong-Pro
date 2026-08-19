@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 import { cn } from "@/lib/utils";
 
 import {
@@ -38,7 +39,12 @@ export function TeamInviteSettings({
     createTeamInviteAction,
     initialState,
   );
-  const { copied, copy } = useCopyToClipboard(1600);
+  const { copied, copying, copy } = useCopyToClipboard(1600);
+
+  useActionFeedback(state, pending, {
+    successTitle: "Đã tạo invite link",
+    errorTitle: "Không thể tạo invite link",
+  });
 
   if (!canManage) {
     return null;
@@ -80,7 +86,13 @@ export function TeamInviteSettings({
             </Select>
           </label>
 
-          <Button type="submit" variant="gold" className="self-end" disabled={pending}>
+          <Button
+            type="submit"
+            variant="gold"
+            className="self-end"
+            loading={pending}
+            loadingText="Đang tạo..."
+          >
             <Plus className="size-4" />
             {pending ? "Đang tạo..." : "Tạo link"}
           </Button>
@@ -105,6 +117,8 @@ export function TeamInviteSettings({
                 type="button"
                 variant="emerald"
                 size="sm"
+                loading={copying}
+                loadingText="Đang copy..."
                 onClick={() => void copy(state.inviteUrl ?? "")}
               >
                 <Clipboard className="size-4" />
@@ -137,7 +151,16 @@ function InviteRow({
   invite: TeamInvite & { inviteUrl: string };
   teamSlug: string;
 }) {
-  const { copied, copy } = useCopyToClipboard(1600);
+  const { copied, copying, copy } = useCopyToClipboard(1600);
+  const [state, formAction, pending] = useActionState(
+    (_previousState: CreateInviteFormState, formData: FormData) =>
+      revokeTeamInviteAction(formData),
+    initialState,
+  );
+  useActionFeedback(state, pending, {
+    successTitle: "Đã thu hồi invite",
+    errorTitle: "Không thể thu hồi invite",
+  });
   const status = getInviteStatus(invite);
   const expiresAt = new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
@@ -162,6 +185,8 @@ function InviteRow({
           type="button"
           variant="luxury"
           size="sm"
+          loading={copying}
+          loadingText="Đang copy..."
           onClick={() => void copy(invite.inviteUrl)}
         >
           <Clipboard className="size-4" />
@@ -169,10 +194,16 @@ function InviteRow({
         </Button>
 
         {!invite.revoked_at ? (
-          <form action={revokeTeamInviteAction}>
+          <form action={formAction}>
             <input type="hidden" name="teamSlug" value={teamSlug} />
             <input type="hidden" name="inviteId" value={invite.id} />
-            <Button type="submit" variant="outline" size="sm">
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              loading={pending}
+              loadingText="Đang thu hồi..."
+            >
               <RotateCcw className="size-4" />
               Thu hồi
             </Button>

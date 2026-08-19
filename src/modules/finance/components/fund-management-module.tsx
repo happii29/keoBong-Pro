@@ -28,7 +28,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -384,13 +383,10 @@ function TransactionHistory({
                         transaction={transaction}
                         mode="edit"
                       />
-                      <form action={deleteFundTransactionAction}>
-                        <input type="hidden" name="teamSlug" value={teamSlug} />
-                        <input type="hidden" name="transactionId" value={transaction.id} />
-                        <Button type="submit" variant="destructive" size="icon" aria-label="Xóa giao dịch">
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </form>
+                      <DeleteTransactionForm
+                        teamSlug={teamSlug}
+                        transactionId={transaction.id}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -406,6 +402,41 @@ function TransactionHistory({
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+function DeleteTransactionForm({
+  teamSlug,
+  transactionId,
+}: {
+  teamSlug: string;
+  transactionId: string;
+}) {
+  const [state, formAction, pending] = useActionState(
+    (_previousState: FundFormState, formData: FormData) =>
+      deleteFundTransactionAction(formData),
+    initialState,
+  );
+
+  useActionFeedback(state, pending, {
+    successTitle: "Đã xóa giao dịch",
+    errorTitle: "Không thể xóa giao dịch",
+  });
+
+  return (
+    <form action={formAction}>
+      <input type="hidden" name="teamSlug" value={teamSlug} />
+      <input type="hidden" name="transactionId" value={transactionId} />
+      <Button
+        type="submit"
+        variant="destructive"
+        size="icon"
+        aria-label="Xóa giao dịch"
+        loading={pending}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </form>
   );
 }
 
@@ -519,8 +550,12 @@ function TransactionDialog({
           {state.error ? <p className="text-sm font-medium text-destructive">{state.error}</p> : null}
           {state.message ? <p className="text-sm font-medium text-emerald">{state.message}</p> : null}
 
-          <Button type="submit" variant="emerald" disabled={pending}>
-            {pending ? <SoccerLoader /> : null}
+          <Button
+            type="submit"
+            variant="emerald"
+            loading={pending}
+            loadingText={mode === "create" ? "Đang thêm..." : "Đang lưu..."}
+          >
             {mode === "create" ? "Thêm giao dịch" : "Lưu giao dịch"}
           </Button>
         </form>

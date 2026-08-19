@@ -2,6 +2,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -41,7 +42,11 @@ const buttonVariants = cva(
 );
 
 function Button({
+  children,
   className,
+  disabled,
+  loading = false,
+  loadingText,
   variant,
   size,
   asChild = false,
@@ -49,15 +54,32 @@ function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
-  }) {
+    loading?: boolean;
+    loadingText?: React.ReactNode;
+}) {
   const Comp = asChild ? Slot : "button";
+  const isDisabled = disabled || loading;
+  const content =
+    loading && !asChild ? (
+      <>
+        <SoccerLoader />
+        {loadingText ?? children}
+      </>
+    ) : (
+      children
+    );
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={loading || undefined}
+      aria-disabled={asChild && isDisabled ? true : undefined}
+      disabled={asChild ? undefined : isDisabled}
       {...props}
-    />
+    >
+      {content}
+    </Comp>
   );
 }
 

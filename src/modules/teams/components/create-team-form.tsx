@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { createTeamAction } from "../actions";
@@ -176,12 +175,15 @@ export function CreateTeamForm() {
             </div>
           ) : null}
 
-          <Button type="submit" variant="gold" size="lg" className="w-full">
-            {pending ? (
-              <SoccerLoader />
-            ) : (
-              <ShieldPlus className="size-4" />
-            )}
+          <Button
+            type="submit"
+            variant="gold"
+            size="lg"
+            className="w-full"
+            loading={pending}
+            loadingText="Đang tạo đội..."
+          >
+            <ShieldPlus className="size-4" />
             Tạo đội bóng
           </Button>
         </form>

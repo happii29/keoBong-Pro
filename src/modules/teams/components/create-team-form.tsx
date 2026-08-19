@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { CalendarDays, Loader2, MapPin, ShieldPlus } from "lucide-react";
+import { CalendarDays, MapPin, ShieldPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { createTeamAction } from "../actions";
 import { normalizeTeamSlug } from "../slug";
@@ -46,6 +48,10 @@ export function CreateTeamForm() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
+  useActionFeedback(state, pending, {
+    successTitle: "Đã tạo đội bóng",
+    errorTitle: "Không thể tạo đội",
+  });
 
   const suggestedSlug = useMemo(() => normalizeTeamSlug(name), [name]);
   const displayedSlug = slugTouched ? slug : suggestedSlug;
@@ -172,7 +178,7 @@ export function CreateTeamForm() {
 
           <Button type="submit" variant="gold" size="lg" className="w-full">
             {pending ? (
-              <Loader2 className="size-4 animate-spin" />
+              <SoccerLoader />
             ) : (
               <ShieldPlus className="size-4" />
             )}

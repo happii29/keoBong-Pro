@@ -30,6 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -39,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatTeamSlug } from "@/lib/format";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { updateMatchRankingStatsAction } from "../actions";
 import type {
@@ -360,8 +362,10 @@ function ResultBadge({ match }: { match: RankingMatchInput }) {
 }
 
 function MatchStatsDialog({ teamSlug, match }: { teamSlug: string; match: RankingMatchInput }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="luxury" size="sm">
           <Edit3 className="size-4" />
@@ -375,14 +379,26 @@ function MatchStatsDialog({ teamSlug, match }: { teamSlug: string; match: Rankin
             {match.label} · {formatDateTime(match.startsAt)}
           </DialogDescription>
         </DialogHeader>
-        <MatchStatsForm teamSlug={teamSlug} match={match} />
+        <MatchStatsForm teamSlug={teamSlug} match={match} onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function MatchStatsForm({ teamSlug, match }: { teamSlug: string; match: RankingMatchInput }) {
-  const [state, formAction] = useActionState(updateMatchRankingStatsAction, initialState);
+function MatchStatsForm({
+  teamSlug,
+  match,
+  onSuccess,
+}: {
+  teamSlug: string;
+  match: RankingMatchInput;
+  onSuccess?: () => void;
+}) {
+  const [state, formAction, pending] = useActionState(updateMatchRankingStatsAction, initialState);
+  useActionFeedback(state, pending, {
+    successTitle: "Đã cập nhật stats",
+    onSuccess,
+  });
 
   return (
     <form action={formAction} className="space-y-5">
@@ -444,8 +460,8 @@ function MatchStatsForm({ teamSlug, match }: { teamSlug: string; match: RankingM
           {state.error ? <p className="font-medium text-destructive">{state.error}</p> : null}
           {state.message ? <p className="font-medium text-emerald">{state.message}</p> : null}
         </div>
-        <Button type="submit" variant="emerald" disabled={!match.players.length}>
-          <Save className="size-4" />
+        <Button type="submit" variant="emerald" disabled={!match.players.length || pending}>
+          {pending ? <SoccerLoader /> : <Save className="size-4" />}
           Lưu stats
         </Button>
       </div>

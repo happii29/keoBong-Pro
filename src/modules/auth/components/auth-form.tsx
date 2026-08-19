@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { Globe2, Loader2, LogIn, UserPlus } from "lucide-react";
+import { Globe2, LogIn, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { appConfig } from "@/config/app";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import type { AuthFormState } from "../auth.types";
 import { loginAction, loginWithGoogleAction, registerAction } from "../actions";
@@ -33,6 +35,10 @@ export function AuthForm({ mode, redirectTo }: AuthFormProps) {
     isLogin ? loginAction : registerAction,
     initialState,
   );
+  useActionFeedback(state, pending, {
+    successTitle: isLogin ? "Đăng nhập thành công" : "Đăng ký thành công",
+    errorTitle: isLogin ? "Không thể đăng nhập" : "Không thể đăng ký",
+  });
   const Icon = isLogin ? LogIn : UserPlus;
 
   return (
@@ -130,7 +136,7 @@ export function AuthForm({ mode, redirectTo }: AuthFormProps) {
             ) : null}
 
             <Button type="submit" variant="gold" size="lg" className="w-full">
-              {pending ? <Loader2 className="size-4 animate-spin" /> : <Icon className="size-4" />}
+              {pending ? <SoccerLoader /> : <Icon className="size-4" />}
               {isLogin ? "Đăng nhập" : "Đăng ký"}
             </Button>
           </form>

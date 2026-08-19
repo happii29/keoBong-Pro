@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type * as React from "react";
 import {
   CalendarDays,
@@ -34,8 +34,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { createMatchAction, updateMatchStatusAction } from "../actions";
 import { updateAttendanceStatusAction } from "../attendance-actions";
@@ -175,8 +177,10 @@ export function MatchManagementModule({
 }
 
 function CreateMatchDialog({ teamSlug }: { teamSlug: string }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="gold" size="lg">
           <Plus className="size-4" />
@@ -190,17 +194,21 @@ function CreateMatchDialog({ teamSlug }: { teamSlug: string }) {
             Nhập thông tin trận để đội có lịch đá và chuẩn bị điểm danh.
           </DialogDescription>
         </DialogHeader>
-        <MatchForm teamSlug={teamSlug} />
+        <MatchForm teamSlug={teamSlug} onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function MatchForm({ teamSlug }: { teamSlug: string }) {
+function MatchForm({ teamSlug, onSuccess }: { teamSlug: string; onSuccess?: () => void }) {
   const [state, formAction, pending] = useActionState(
     createMatchAction,
     initialState,
   );
+  useActionFeedback(state, pending, {
+    successTitle: "Đã tạo trận đấu",
+    onSuccess,
+  });
 
   return (
     <form action={formAction} className="space-y-4">
@@ -282,7 +290,7 @@ function MatchForm({ teamSlug }: { teamSlug: string }) {
       ) : null}
 
       <Button type="submit" variant="gold" className="w-full" disabled={pending}>
-        <Plus className="size-4" />
+        {pending ? <SoccerLoader /> : <Plus className="size-4" />}
         {pending ? "Đang tạo..." : "Tạo trận đấu"}
       </Button>
     </form>

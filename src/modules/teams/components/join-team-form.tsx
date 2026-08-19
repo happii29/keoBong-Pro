@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { joinTeamBySlugAction } from "../actions";
 import { normalizeTeamSlug } from "../slug";
@@ -25,6 +27,10 @@ export function JoinTeamForm() {
     initialState,
   );
   const [teamSlug, setTeamSlug] = useState("");
+  useActionFeedback(state, pending, {
+    successTitle: "Đã tham gia đội",
+    errorTitle: "Không thể tham gia đội",
+  });
 
   return (
     <Card className="w-full py-0">
@@ -65,7 +71,7 @@ export function JoinTeamForm() {
           ) : null}
 
           <Button type="submit" variant="emerald" size="lg" className="w-full">
-            <LogIn className="size-4" />
+            {pending ? <SoccerLoader /> : <LogIn className="size-4" />}
             {pending ? "Đang tham gia..." : "Tham gia đội"}
           </Button>
         </form>

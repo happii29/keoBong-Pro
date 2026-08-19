@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   Dumbbell,
   Edit3,
@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import {
   createPlayerAction,
@@ -288,8 +290,10 @@ function PlayerMobileCard({
 }
 
 function CreatePlayerDialog({ teamSlug }: { teamSlug: string }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="gold" size="lg">
           <Plus className="size-4" />
@@ -303,7 +307,7 @@ function CreatePlayerDialog({ teamSlug }: { teamSlug: string }) {
             Tạo hồ sơ cầu thủ để dùng cho điểm danh, chia đội, quỹ và ranking.
           </DialogDescription>
         </DialogHeader>
-        <PlayerForm mode="create" teamSlug={teamSlug} />
+        <PlayerForm mode="create" teamSlug={teamSlug} onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -316,9 +320,11 @@ function PlayerActions({
   player: PlayerManagementPlayer;
   teamSlug: string;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex justify-end gap-2">
-      <Dialog>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button variant="luxury" size="sm">
             <Edit3 className="size-4" />
@@ -332,7 +338,7 @@ function PlayerActions({
               Cập nhật thông tin đội hình và liên hệ của cầu thủ.
             </DialogDescription>
           </DialogHeader>
-          <PlayerForm mode="update" teamSlug={teamSlug} player={player} />
+          <PlayerForm mode="update" teamSlug={teamSlug} player={player} onSuccess={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
 
@@ -357,15 +363,21 @@ function PlayerForm({
   mode,
   teamSlug,
   player,
+  onSuccess,
 }: {
   mode: "create" | "update";
   teamSlug: string;
   player?: PlayerManagementPlayer;
+  onSuccess?: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
     mode === "create" ? createPlayerAction : updatePlayerAction,
     initialState,
   );
+  useActionFeedback(state, pending, {
+    successTitle: mode === "create" ? "Đã thêm cầu thủ" : "Đã cập nhật cầu thủ",
+    onSuccess,
+  });
 
   return (
     <form action={formAction} className="space-y-4">
@@ -468,7 +480,7 @@ function PlayerForm({
       ) : null}
 
       <Button type="submit" variant="gold" className="w-full" disabled={pending}>
-        {mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
+        {pending ? <SoccerLoader /> : mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
         {pending ? "Đang lưu..." : mode === "create" ? "Thêm cầu thủ" : "Lưu thay đổi"}
       </Button>
     </form>

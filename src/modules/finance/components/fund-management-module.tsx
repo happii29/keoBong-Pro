@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -28,6 +28,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SoccerLoader } from "@/components/ui/soccer-loader";
 import {
   Table,
   TableBody,
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { formatTeamSlug } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import {
   createFundTransactionAction,
@@ -421,11 +423,16 @@ function TransactionDialog({
   transaction?: FinanceTransaction;
 }) {
   const action = mode === "create" ? createFundTransactionAction : updateFundTransactionAction;
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction, pending] = useActionState(action, initialState);
+  const [open, setOpen] = useState(false);
+  useActionFeedback(state, pending, {
+    successTitle: mode === "create" ? "Đã thêm giao dịch" : "Đã cập nhật giao dịch",
+    onSuccess: () => setOpen(false),
+  });
   const title = mode === "create" ? "Thêm thu/chi" : "Sửa giao dịch";
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={mode === "create" ? "gold" : "outline"} size={mode === "create" ? "default" : "icon"}>
           {mode === "create" ? <Plus className="size-4" /> : <Edit3 className="size-4" />}
@@ -512,7 +519,8 @@ function TransactionDialog({
           {state.error ? <p className="text-sm font-medium text-destructive">{state.error}</p> : null}
           {state.message ? <p className="text-sm font-medium text-emerald">{state.message}</p> : null}
 
-          <Button type="submit" variant="emerald">
+          <Button type="submit" variant="emerald" disabled={pending}>
+            {pending ? <SoccerLoader /> : null}
             {mode === "create" ? "Thêm giao dịch" : "Lưu giao dịch"}
           </Button>
         </form>

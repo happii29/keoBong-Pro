@@ -73,7 +73,7 @@ const pricingPlans = [
   },
   {
     name: "Pro Team",
-    price: "149k",
+    price: "1đ",
     description: "Gói tốt nhất cho đội đá hằng tuần.",
     cta: "Bắt đầu Pro",
     highlighted: true,

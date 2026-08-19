@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 import {
   getFirstTeamSlugForCurrentUser,
@@ -9,7 +10,10 @@ import { createSupabaseServerClient } from "@/services/supabase/server-client";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const nextPath = getSafeRedirectPath(requestUrl.searchParams.get("next"));
+  const cookieStore = await cookies();
+  const nextPath =
+    getSafeRedirectPath(cookieStore.get("kb_auth_next")?.value ?? null) ??
+    getSafeRedirectPath(requestUrl.searchParams.get("next"));
   const supabase = await createSupabaseServerClient();
 
   if (code) {
@@ -21,16 +25,23 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/login", requestUrl.origin));
+    const response = NextResponse.redirect(new URL("/login", requestUrl.origin));
+    response.cookies.delete("kb_auth_next");
+    return response;
   }
 
   if (nextPath && nextPath !== "/login" && nextPath !== "/register") {
-    return NextResponse.redirect(new URL(nextPath, requestUrl.origin));
+    const response = NextResponse.redirect(new URL(nextPath, requestUrl.origin));
+    response.cookies.delete("kb_auth_next");
+    return response;
   }
 
   const firstTeamSlug = await getFirstTeamSlugForCurrentUser(supabase, user.id);
 
-  return NextResponse.redirect(
+  const response = NextResponse.redirect(
     new URL(firstTeamSlug ? `/teams/${firstTeamSlug}` : "/teams/new", requestUrl.origin),
   );
+  response.cookies.delete("kb_auth_next");
+
+  return response;
 }

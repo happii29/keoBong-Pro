@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { isSupabaseConfigured } from "@/services/supabase";
@@ -126,14 +127,24 @@ export async function loginWithGoogleAction(formData: FormData) {
     (shouldIgnoreLocalConfiguredOrigin ? requestOrigin : configuredOrigin) ??
     requestOrigin ??
     "http://localhost:3000";
-  const nextPath = requestedRedirect ?? "/teams/new";
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-    },
-  });
+    const nextPath = requestedRedirect ?? "/teams/new";
+    const cookieStore = await cookies();
+
+    cookieStore.set("kb_auth_next", nextPath, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: origin.startsWith("https://"),
+      path: "/",
+      maxAge: 60 * 10,
+    });
+
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+      },
+    });
 
   if (error || !data.url) {
     redirect(`/login?error=${encodeURIComponent(error?.message ?? "Không thể đăng nhập Google.")}`);

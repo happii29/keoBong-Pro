@@ -113,9 +113,18 @@ export async function loginWithGoogleAction(formData: FormData) {
 
   const requestedRedirect = getSafeRedirectPath(formData.get("redirectTo"));
   const headerStore = await headers();
+  const forwardedHost = headerStore.get("x-forwarded-host");
+  const forwardedProto = headerStore.get("x-forwarded-proto") ?? "https";
+  const requestOrigin =
+    (forwardedHost ? `${forwardedProto}://${forwardedHost}` : null) ??
+    headerStore.get("origin");
+  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL;
+  const shouldIgnoreLocalConfiguredOrigin =
+    Boolean(configuredOrigin?.includes("localhost")) &&
+    Boolean(requestOrigin && !requestOrigin.includes("localhost"));
   const origin =
-    headerStore.get("origin") ??
-    process.env.NEXT_PUBLIC_APP_URL ??
+    (shouldIgnoreLocalConfiguredOrigin ? requestOrigin : configuredOrigin) ??
+    requestOrigin ??
     "http://localhost:3000";
   const nextPath = requestedRedirect ?? "/teams/new";
   const supabase = await createSupabaseServerClient();

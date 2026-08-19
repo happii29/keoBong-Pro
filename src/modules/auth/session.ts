@@ -14,6 +14,17 @@ export function getSafeRedirectPath(value: FormDataEntryValue | string | null) {
   return value;
 }
 
+export function shouldUseRequestedPostAuthRedirect(
+  value: string | null,
+): value is string {
+  return Boolean(
+    value &&
+      value !== "/login" &&
+      value !== "/register" &&
+      value !== "/teams/new",
+  );
+}
+
 export async function getFirstTeamSlugForCurrentUser(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -44,7 +55,7 @@ export async function getPostAuthRedirectPath(
   userId: string,
   requestedRedirect: string | null,
 ) {
-  if (requestedRedirect && requestedRedirect !== "/login" && requestedRedirect !== "/register") {
+  if (shouldUseRequestedPostAuthRedirect(requestedRedirect)) {
     return requestedRedirect;
   }
 

@@ -8,7 +8,11 @@ import { isSupabaseConfigured } from "@/services/supabase";
 import { createSupabaseServerClient } from "@/services/supabase/server-client";
 
 import type { AuthFormState } from "./auth.types";
-import { getPostAuthRedirectPath, getSafeRedirectPath } from "./session";
+import {
+  getPostAuthRedirectPath,
+  getSafeRedirectPath,
+  shouldUseRequestedPostAuthRedirect,
+} from "./session";
 
 export async function loginAction(
   _previousState: AuthFormState,
@@ -127,9 +131,12 @@ export async function loginWithGoogleAction(formData: FormData) {
     (shouldIgnoreLocalConfiguredOrigin ? requestOrigin : configuredOrigin) ??
     requestOrigin ??
     "http://localhost:3000";
-    const nextPath = requestedRedirect ?? "/teams/new";
-    const cookieStore = await cookies();
+  const nextPath = shouldUseRequestedPostAuthRedirect(requestedRedirect)
+    ? requestedRedirect
+    : null;
+  const cookieStore = await cookies();
 
+  if (nextPath) {
     cookieStore.set("kb_auth_next", nextPath, {
       httpOnly: true,
       sameSite: "lax",
@@ -137,14 +144,17 @@ export async function loginWithGoogleAction(formData: FormData) {
       path: "/",
       maxAge: 60 * 10,
     });
+  } else {
+    cookieStore.delete("kb_auth_next");
+  }
 
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-      },
-    });
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  });
 
   if (error || !data.url) {
     redirect(`/login?error=${encodeURIComponent(error?.message ?? "Không thể đăng nhập Google.")}`);

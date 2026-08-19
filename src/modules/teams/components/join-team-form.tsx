@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { joinTeamBySlugAction } from "../actions";
-import { normalizeTeamSlug } from "../slug";
+import { normalizeTeamSlugInput } from "../slug";
 import type { JoinTeamFormState } from "../team-form.types";
 
 const initialState: JoinTeamFormState = {};
@@ -54,7 +54,7 @@ export function JoinTeamForm() {
             <Input
               name="teamSlug"
               value={teamSlug}
-              onChange={(event) => setTeamSlug(normalizeTeamSlug(event.target.value))}
+              onChange={(event) => setTeamSlug(normalizeTeamSlugInput(event.target.value))}
               minLength={3}
               maxLength={48}
               pattern="[a-z0-9]+(-[a-z0-9]+)*"

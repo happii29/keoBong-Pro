@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/modules/auth/components/auth-form";
 import {
-  getFirstTeamSlugForCurrentUser,
+  getPostAuthRedirectPath,
   getSafeRedirectPath,
 } from "@/modules/auth/session";
 import { isSupabaseConfigured } from "@/services/supabase";
@@ -27,13 +27,13 @@ export default async function RegisterPage({
     } = await supabase.auth.getUser();
 
     if (user) {
-      const firstTeamSlug = await getFirstTeamSlugForCurrentUser(
+      const redirectPath = await getPostAuthRedirectPath(
         supabase,
         user.id,
+        safeRedirectTo,
       );
-      const fallbackPath = firstTeamSlug ? `/teams/${firstTeamSlug}` : "/teams/new";
 
-      redirect(safeRedirectTo ?? fallbackPath);
+      redirect(redirectPath);
     }
   }
 

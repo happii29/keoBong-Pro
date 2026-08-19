@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useActionFeedback } from "@/hooks/use-action-feedback";
 
 import { createTeamAction } from "../actions";
-import { normalizeTeamSlug } from "../slug";
+import { normalizeTeamSlug, normalizeTeamSlugInput } from "../slug";
 import type { CreateTeamFormState } from "../team-form.types";
 
 const initialState: CreateTeamFormState = {};
@@ -94,7 +94,7 @@ export function CreateTeamForm() {
                 value={displayedSlug}
                 onChange={(event) => {
                   setSlugTouched(true);
-                  setSlug(normalizeTeamSlug(event.target.value));
+                  setSlug(normalizeTeamSlugInput(event.target.value));
                 }}
                 minLength={3}
                 maxLength={48}

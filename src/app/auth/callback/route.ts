@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import {
   getFirstTeamSlugForCurrentUser,
   getSafeRedirectPath,
+  shouldUseRequestedPostAuthRedirect,
 } from "@/modules/auth/session";
 import { createSupabaseServerClient } from "@/services/supabase/server-client";
 
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
     return response;
   }
 
-  if (nextPath && nextPath !== "/login" && nextPath !== "/register") {
+  if (shouldUseRequestedPostAuthRedirect(nextPath)) {
     const response = NextResponse.redirect(new URL(nextPath, requestUrl.origin));
     response.cookies.delete("kb_auth_next");
     return response;
